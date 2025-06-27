@@ -11,7 +11,7 @@ function App() {
     let interval: ReturnType<typeof setInterval>;
     const checkStatus = async () => {
       try {
-        const res = await fetch("/api/status/");
+        const res = await fetch("http://localhost:8000/status/");
         const data = await res.json();
         if (data.ready) {
           setAppReady(true);
@@ -37,7 +37,7 @@ function App() {
     
     try {
       // Call the real API
-      const response = await fetch("/api/chat/", {
+      const response = await fetch("http://localhost:8000/chat/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
