@@ -1,4 +1,6 @@
 from django.db import models
+import logging
+logger = logging.getLogger(__name__)
 
 class AppState(models.Model):
     key = models.CharField(max_length=100, unique=True)
@@ -11,12 +13,14 @@ class AppState(models.Model):
     def get_ready_status(cls):
         try:
             state = cls.objects.get(key='ready')
+            logger.info(state.value.lower())
             return state.value.lower() == 'true'
         except cls.DoesNotExist:
-            return False
+            cls.objects.create(key='ready', value='true')
+            return True
     
     @classmethod
-    def set_ready_status(cls, ready):
+    def set_ready_status(cls, ready=True):
         state, created = cls.objects.get_or_create(
             key='ready',
             defaults={'value': str(ready).lower()}
