@@ -8,6 +8,11 @@ export default defineConfig({
     alias: [{ find: "@", replacement: "/src" }],
   },
   optimizeDeps: {
-    exclude: ['@preflower/barcode-detector-polyfill']
+    exclude: ['@preflower/barcode-detector-polyfill'],
+  },
+  server: {
+    host:true,
+    port:80,
   }
+
 });
