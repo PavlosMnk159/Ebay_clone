@@ -6,6 +6,8 @@ from .serializers import QueryRequestSerializer, QueryResponseSerializer
 from .models import AppState
 from .utils import process_query
 import asyncio
+import logging
+logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -30,4 +32,5 @@ def chat(request):
 @permission_classes([AllowAny])
 def status_view(request):
     ready = AppState.get_ready_status()
+    logger.info(f"ready: {ready}")
     return Response({"ready": ready})
