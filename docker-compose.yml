@@ -8,7 +8,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./backend/app:/app/app
-      - ./extracted_images:/app/extracted_images
 
     restart: always
 
