@@ -1,0 +1,4 @@
+password confirmation in backend too
+password strength check
+ssl tls
+logout

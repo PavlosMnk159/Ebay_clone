@@ -4,8 +4,10 @@ import { LoginPage } from './utils.tsx';
 import { RegisterPage } from './utils.tsx';
 import { ChatPage } from './ChatPage.tsx';
 
+import { loginUser } from "./Authentication/auth.ts";
+import { registerUser } from "./Authentication/auth.ts";
 
-
+import { LoginFormData, RegisterFormData } from "./types/auth_types";
 
 
 function App() {
@@ -13,23 +15,26 @@ function App() {
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showChat, setShowChat] = useState(false); 
-  
-  const handleLogin = (success: boolean) => {
-    if (success) {
+
+  const handleLogin = async (data: LoginFormData) => {
+    const response = await loginUser(data);
+    if (response.success) {
       setIsLoggedIn(true);
-      console.log("User logged in successfully!");
+      setCurrentPage("chat");
+    } else {
+      alert("Login failed, please try again.");
     }
-  };
+    
+  }
 
-  const handleRegister = (success: boolean) => {
-    if (success) {
+  const handleRegister = async (data: RegisterFormData) => {
+    const response = await registerUser(data);
+    if (response.success) {
       setCurrentPage("login");
-      setShowRegisterSuccess(true); 
-      console.log("User registered successfully! Please sign in.");
+    } else {
+      alert("Registration failed");
     }
-  };
-
-
+  }
 
   // registration success message
   if (showRegisterSuccess) {
