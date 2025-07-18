@@ -19,7 +19,9 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'rest_framework',
     'corsheaders',
-    'app',
+    'auctions',
+    'messages',
+    'User'
 ]
 
 MIDDLEWARE = [
@@ -74,31 +76,4 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTH_USER_MODEL = "app.CustomUser"
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'stream': sys.stdout,
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'app': {  # use your actual app name here if different
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-}
+AUTH_USER_MODEL = "User.CustomUser"
