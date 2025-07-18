@@ -1,18 +1,10 @@
 from django.contrib import admin
-from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-from app import views
-
+from django.urls import path, include
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('chat/', views.chat, name='chat'),
-    path('status/', views.status_view, name='status'),
-    path('register/', views.RegisterView.as_view(), name='register'),
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # login
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), # refresh token
+    path('', include('auctions.urls')),
+    path('', include('messages.urls')),
+    path('', include('User.urls')),
 ]

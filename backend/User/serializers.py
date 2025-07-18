@@ -1,13 +1,5 @@
 from rest_framework import serializers
 from .models import CustomUser
-from django.contrib.auth import authenticate
-
-class QueryRequestSerializer(serializers.Serializer):
-    message = serializers.CharField(max_length=10000)
-
-class QueryResponseSerializer(serializers.Serializer):
-    response = serializers.CharField()
-
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """
@@ -33,25 +25,3 @@ class RegistrationSerializer(serializers.ModelSerializer):
             phone=validated_data.get('phone'),
             AFM=validated_data.get('AFM'),
         )
-
-
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        user = authenticate(username=data['username'], password=data['password'])
-        if user is None:
-            raise serializers.ValidationError("Invalid credentials")
-        data['user'] = user
-        return data
-
-
-# county = models.CharField(max_length=256)
-# region = models.CharField(max_length=256)
-# city = models.CharField(max_length=256)
-# postal_code = models.CharField(max_length=256)
-# address = models.CharField(max_length=256)
-# house_number = models.IntegerField()
-# phone = PhoneNumberField(region='GR')
-# afm = models.IntegerField()
