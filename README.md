@@ -10,7 +10,6 @@
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- BMW X1 Series manual PDF
 
 ### Configuration
 

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Users>
+  <User>
+    <Username>test</Username>
+    <Password>test1234</Password>
+    <Email>test@example.com</Email>
+    <FirstName>Test</FirstName>
+    <LastName>User</LastName>
+    <Country>Greece</Country>
+    <Region>Attica</Region>
+    <City>Athens</City>
+    <PostalCode>10400</PostalCode>
+    <Address>Main Street</Address>
+    <HouseNumber>1</HouseNumber>
+    <Phone>+306900000001</Phone>
+    <AFM>100000001</AFM>
+  </User>
+  <User>
+    <Username>guest</Username>
+    <Password>guest</Password>
+    <Email>guest@example.com</Email>
+    <FirstName>Guest</FirstName>
+    <LastName>User</LastName>
+    <Country>Greece</Country>
+    <Region>Thessaloniki</Region>
+    <City>Thessaloniki</City>
+    <PostalCode>54622</PostalCode>
+    <Address>Elm Street</Address>
+    <HouseNumber>2</HouseNumber>
+    <Phone>+306900000002</Phone>
+    <AFM>100000002</AFM>
+  </User>
+    <User>
+    <Username>john_doe</Username>
+    <Password>password</Password>
+    <Email>john@example.com</Email>
+    <FirstName>John</FirstName>
+    <LastName>Doe</LastName>
+    <Country>Greece</Country>
+    <Region>Attica</Region>
+    <City>Athens</City>
+    <PostalCode>10400</PostalCode>
+    <Address>Main Street</Address>
+    <HouseNumber>12</HouseNumber>
+    <Phone>+306971234567</Phone>
+    <AFM>123456789</AFM>
+  </User>
+  <User>
+    <Username>maria_smith</Username>
+    <Password>password</Password>
+    <Email>maria@example.com</Email>
+    <FirstName>Maria</FirstName>
+    <LastName>Smith</LastName>
+    <Country>Greece</Country>
+    <Region>Thessaloniki</Region>
+    <City>Thessaloniki</City>
+    <PostalCode>54622</PostalCode>
+    <Address>Elm Street</Address>
+    <HouseNumber>5</HouseNumber>
+    <Phone>+306981234567</Phone>
+    <AFM>987654321</AFM>
+  </User>
+</Users>

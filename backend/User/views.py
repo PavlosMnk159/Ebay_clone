@@ -3,13 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from .serializers import RegistrationSerializer
-from .models import AppState
-
-class StatusView(APIView):
-    def get(self, request):
-        ready = AppState.get_ready_status()
-        print(f"ready: {ready}")
-        return Response({"ready": ready})
 
 class RegisterView(APIView):
     permission_classes = [AllowAny] 
