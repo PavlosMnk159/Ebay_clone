@@ -19,11 +19,11 @@ class Item(models.Model):
     location = models.CharField(max_length=255)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-    country = models.CharField(max_length=100)
+    country = models.CharField(max_length=100, null=True)
     started = models.DateTimeField()
     ends = models.DateTimeField()
     seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='items_for_sale')
-    description = models.TextField()
+    description = models.TextField(null=True)
     active = models.BooleanField(default=False)
 
     def __str__(self):

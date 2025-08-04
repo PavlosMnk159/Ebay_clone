@@ -4,3 +4,4 @@ ssl tls
 logout
 organise the serialisers
 I am currently deleting migrations automatically. Remove for produciton code
+there are duplicates in the users fix that

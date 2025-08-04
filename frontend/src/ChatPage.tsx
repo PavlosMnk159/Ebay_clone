@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import axiosInstance from "./Authentication/axios";
+import axios from "axios";
 
 export function ChatPage({ onLogout }: { onLogout: () => void; }) {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean;}>>([]);
@@ -37,26 +39,29 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
     
     try {
       // Call the real API
-      const response = await fetch("http://localhost:8000/chat/", {
+      const response = await axiosInstance("http://localhost:8000/chat/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: inputText }),
+        data: JSON.stringify({ message: inputText }),
       });
+      const data = response.data;
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
       
       // Add bot response to chat
       setMessages(prev => {
         const newMessages = [...prev, { text: data.response, isUser: false }];
         return newMessages;
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.log("HTTP error", error.response.status, error.response.data);
+        } else {
+          console.log("Did not receive response");
+        }
+      }
       console.error("Error sending message:", error);
       setMessages(prev => [...prev, { text: "Sorry, there was an error processing your request.", isUser: false }]);
     } finally {
