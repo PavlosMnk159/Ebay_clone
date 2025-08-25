@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { BASE_URL } from '@/config/url';
 
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+const fetch_with_auth = axios.create({
+  baseURL: BASE_URL,
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
@@ -9,15 +10,16 @@ const axiosInstance = axios.create({
   },
 });
 
-axiosInstance.interceptors.request.use((config) => {
+fetch_with_auth.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
+  console.log(localStorage.getItem('access_token'));
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
 });
 
-axiosInstance.interceptors.response.use(
+fetch_with_auth.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
@@ -29,15 +31,15 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refresh = localStorage.getItem('refresh_token');
-        const response = await axios.post('http://localhost:8000/api/accounts/token/refresh/', {
+        const response = await axios.post('/token/refresh/', {
           refresh,
         });
 
         const newAccess = response.data.access;
         localStorage.setItem('access_token', newAccess);
-        axiosInstance.defaults.headers['Authorization'] = `Bearer ${newAccess}`;
+        fetch_with_auth.defaults.headers['Authorization'] = `Bearer ${newAccess}`;
         originalRequest.headers['Authorization'] = `Bearer ${newAccess}`;
-        return axiosInstance(originalRequest);
+        return fetch_with_auth(originalRequest);
       } catch (refreshError) {
         localStorage.clear();
         window.location.href = '/login';
@@ -48,4 +50,4 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export default axiosInstance;
+export default fetch_with_auth;

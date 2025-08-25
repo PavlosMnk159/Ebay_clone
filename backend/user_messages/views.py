@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import QueryRequestSerializer
 from .utils import process_query
+from .models import MessageState
 
 class Chat(APIView):
     authentication_classes = [JWTAuthentication]
@@ -21,5 +22,22 @@ class Chat(APIView):
         response = process_query(message)
 
         return Response({'response': response}, status=status.HTTP_200_OK)
+    
+class CheckMessages(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        res = MessageState.get_message_status()
+        return Response({'has_messages': res}, status=status.HTTP_200_OK)        
+
+class GetMessages(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({'message': 'lmao messages'}, status=status.HTTP_200_OK)
+    
+
         
         

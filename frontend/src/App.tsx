@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { LoginPage } from './utils.tsx';
 import { RegisterPage } from './utils.tsx';
@@ -15,6 +15,13 @@ function App() {
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showChat, setShowChat] = useState(false); 
+  // const [hasMessages, setHasMessages] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    console.log('the token is: ', token);  
+  
+  }, []);
 
   const handleLogin = async (data: LoginFormData) => {
     const response = await loginUser(data);
@@ -69,7 +76,7 @@ function App() {
 
 
 
-  // chat MBW
+  // chat
   if (isLoggedIn && showChat) {
     return <ChatPage onLogout={() => { 
       setIsLoggedIn(false); 
@@ -88,8 +95,16 @@ function App() {
           {/* Show chat */}
           <button 
           onClick={() => {setShowChat(true)}}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mb-2">
+          className="relative w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mb-2">
           Start Chat
+          <span className="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-500 rounded-full"></span>
+          </button>
+          {/* pretend i got message */}
+          <button
+          onClick={() => {setShowChat(true)}}
+          className="w-full bg-blue-500 text-white"
+          >
+          Pretend i got message
           </button>
           {/* logout */}
           <button 

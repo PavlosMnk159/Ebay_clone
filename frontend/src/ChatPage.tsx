@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axiosInstance from "./Authentication/axios";
 import axios from "axios";
+import fetch_with_auth from "./Authentication/axios";
 
 export function ChatPage({ onLogout }: { onLogout: () => void; }) {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean;}>>([]);
@@ -20,11 +20,36 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
           if (interval) clearInterval(interval);
         }
       } catch (e) {
+        console.log("error while checking status:", e);
         // ignore errors, keep polling
       }
     };
+
     checkStatus();
     interval = setInterval(checkStatus, 1500);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    const checkMessages = async () => {
+      try  {
+        const res = await fetch_with_auth.get("/check_messages/");
+        const data = await res.data;
+        console.log(data);
+        if (data.has_messages) {
+          const mes = await fetch_with_auth("/get_messages/");
+          const message_data = await mes.data;
+          console.log(message_data);
+        }
+
+      } catch (e) {
+        console.log("error while checking for new messages:", e);
+      }
+    }
+
+    checkMessages();
+    interval = setInterval(checkMessages, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -39,12 +64,8 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
     
     try {
       // Call the real API
-      const response = await axiosInstance("http://localhost:8000/chat/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({ message: inputText }),
+      const response = await fetch_with_auth.post("/chat/", {
+        message: inputText
       });
       const data = response.data;
       

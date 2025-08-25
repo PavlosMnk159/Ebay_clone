@@ -15,7 +15,7 @@ from auctions.models import Item
 
 
 
-FAKE_PASSWORD_HASH = make_password("import-password")
+FAKE_PASSWORD_HASH = make_password("test1234")
 
 def is_email(value):
     return re.match(r"[^@]+@[^@]+\.[^@]+", value) is not None
@@ -26,14 +26,20 @@ def parse_price(price_str):
     return Decimal(price_str.replace('$', '').replace(',', '').strip())
 
 
-def create_random_user(identifier):
+def create_random_user(identifier, seen_usernames: set):
     try:
         if is_email(identifier):
-            username = identifier.split("@")[0]
+            base_username = identifier.split("@")[0]
             email = identifier
         else:
-            username = identifier
+            base_username = identifier
             email = identifier + "@email.com"
+
+        username = base_username
+        counter = 1
+        while username in seen_usernames or CustomUser.objects.filter(username=username).exists():
+            username = f"{base_username}_{counter}"
+            counter += 1
 
         user = CustomUser(
             username=username,
@@ -104,6 +110,7 @@ def load_items_from_xml(path):
 
         # Query existing users from DB (by username or email)
         existing_users_qs = CustomUser.objects.filter(Q(username__in=seller_ids) | Q(email__in=seller_ids))
+        seen_usernames = set(u.username for u in existing_users_qs)
         user_cache = {u.username: u for u in existing_users_qs}
         user_cache.update({u.email: u for u in existing_users_qs})
 
@@ -119,7 +126,6 @@ def load_items_from_xml(path):
                 # Extract fields
                 item_id = item_el.get('ItemID')
                 name = item_el.findtext('Name')
-                categories = [c.text for c in item_el.findall('Category')]
                 currently = parse_price(item_el.findtext('Currently'))
                 buy_price = parse_price(item_el.findtext('Buy_Price'))
                 first_bid = parse_price(item_el.findtext('First_Bid'))
@@ -132,14 +138,20 @@ def load_items_from_xml(path):
                 started_dt = make_aware(datetime.strptime(item_el.findtext('Started'), dt_format))
                 ends_dt = make_aware(datetime.strptime(item_el.findtext('Ends'), dt_format))
 
+                # Handle categories
+                categories = [c.text for c in item_el.findall('Category')]
+                
+
+
                 # Handle seller
-                seller_tag = item_el.find('Seller')
+                seller_tag = item_el.find('Seller')                     
                 seller_id = seller_tag.attrib.get('UserID') if seller_tag is not None else None
 
+                # create user if it doesnt exist already
                 seller = user_cache.get(seller_id)
                 if not seller:
                     # Create new user instance but don't save yet
-                    seller = create_random_user(seller_id)
+                    seller = create_random_user(seller_id, seen_usernames)
                     if seller:
                         users_to_create.append(seller)
                         user_cache[seller_id] = seller

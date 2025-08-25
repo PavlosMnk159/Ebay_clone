@@ -30,3 +30,9 @@ class ItemDetail(APIView):
         item = get_object_or_404(Item, item_id=item_id)
         serializer = ItemSerializer(item)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class PlaceBid(APIView):
+    """
+    View to place a bid on a specific item
+    """
+    
