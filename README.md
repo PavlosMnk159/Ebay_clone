@@ -1,17 +1,3 @@
-# BMW X Series Manual Chatbot
-
-<div>
-  <img src="https://cdn.smartrep.gr/uni-ai/smartrep-logo.png" alt="SmartRep" height="100"/>
-  <img src="https://cdn.smartrep.gr/uni-ai/uniai-logo.png" alt="Uni AI" height="100"/>
-</div>
-
-A chatbot application that can answer questions about the BMW X1 manual using LLM technology.
-
-## Hackathon Challenge
-
-1. Create a document-based Q&A system using LLM technology
-2. Process and understand a technical manual (BMW X1)
-
 ## Project Structure
 
 - `frontend/`: React application with a chat interface
@@ -24,7 +10,6 @@ A chatbot application that can answer questions about the BMW X1 manual using LL
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- BMW X1 Series manual PDF
 
 ### Configuration
 

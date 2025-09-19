@@ -1,6 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
+
+
+import { LoginPage } from './utils.tsx';
+import { RegisterPage } from './utils.tsx';
+import { ChatPage } from './ChatPage.tsx';
+
+import { loginUser } from "./Authentication/auth.ts";
+import { registerUser } from "./Authentication/auth.ts";
+
+import { LoginFormData, RegisterFormData } from "./types/auth_types";
+
+  
 import { LoginPage } from './Pages/LoginPage.tsx';
 import { RegisterPage } from './Pages/RegisterPage.tsx';
 // import { WaitingPage } from './Pages/WaitingPage.tsx';
@@ -21,9 +33,12 @@ import { ChatPage } from './Pages/ChatPage.tsx';
 
 
 function MainApp() {
+  const [currentPage, setCurrentPage] = useState("login");
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showChat, setShowChat] = useState(false); 
+  // const [hasMessages, setHasMessages] = useState(false)
  
   const navigate = useNavigate(); // Now inside Router context
 
@@ -49,19 +64,31 @@ function MainApp() {
     }
   };
 
-  const handleLogin = (success: boolean) => {
-    if (success) {
 
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    console.log('the token is: ', token);  
+  
+  }, []);
+
+  const handleLogin = async (data: LoginFormData) => {
+    const response = await loginUser(data);
+    if (response.success) {
       setIsLoggedIn(true);
-      console.log("Admin logged in successfully!");
-      // Optionally navigate to a default page after login
+      setCurrentPage("chat");
+    } else {
+      alert("Login failed, please try again.");
     }
-  };
+    
+  }
 
-  const handleRegister = (success: boolean) => {
-    if (success) {
-      setShowRegisterSuccess(true);
-      console.log("User registered successfully! Please sign in.");
+  const handleRegister = async (data: RegisterFormData) => {
+    const response = await registerUser(data);
+    if (response.success) {
+      setCurrentPage("login");
+    } else {
+      alert("Registration failed");
     }
   };
 
