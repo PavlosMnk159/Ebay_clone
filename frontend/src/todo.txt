@@ -1,0 +1,171 @@
+ebay
+    Buy it now
+    Make offer
+    messeges
+    filters
+    search
+myAuction
+    startAuction
+    editAuction
+    deleteAuction
+
+
+
+
+
+interface Bid {
+    bidder: Bidder;
+    time: number; //time the bid was made
+    amount: number;
+}
+
+interface Bidder {
+    userID: string;
+    rating: number;
+    location: {
+        lat: number,
+        lng: number
+    }
+    country: string;
+}
+
+interface Product {
+    id: number;
+    name: string;
+    category: string;
+    currently: number;
+    Buy_Price: number;
+    First_Bid:number;
+    Number_of_Bids: number;
+    Bids: Bid[] | null;
+    started: number;
+    ends: number;
+    seller: {
+        sellerId: string,
+        rating: string
+    };
+    description: string;
+    image: string;
+    location: {
+        lat: number,
+        lng: number
+    };
+    city: string;
+    isActive: number;
+}
+
+
+
+    
+    const bidders: Bidder[] = [
+        {
+            userID: "1",
+            rating: 0.8,
+            location: {
+                lat: 40,
+                lng: 70
+            },
+            country: "Athens, Greece",
+        },{
+            userID: "2",
+            rating: 0.6,
+            location: {
+                lat: 80,
+                lng: 70
+            },
+            country: "Thessaloniki, Greece",
+        }
+    ];
+    
+    const biddings: Bid [] = [
+      {
+          bidder: bidders[0],
+          time: 16092025,
+          amount: 12
+      },      {
+          bidder: bidders[1],
+          time: 16092025,
+          amount: 14
+      },
+        {
+          bidder: bidders[1],
+          time: 16092025,
+          amount: 15
+      }
+    ];
+
+
+const products = [
+    {
+    id: 1,
+    name: "The Great Gatsby - Classic Literature",
+    category: "Books",
+    currently: 12,
+    Buy_Price: 15,
+    First_Bid: 10,
+    Number_of_Bids: 3,
+    Bids: null,
+    started: 19092025,
+    ends: 20092025,
+    seller: {
+        sellerId: "BookStore123",
+        rating: "98.5%",
+    },
+    description: "A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.",
+    image: "📚",
+    location: {
+        lat: 40.7128,
+        lng: -74.0060,
+    },
+    city: "New York, NY",
+    isActive: 1
+    },  {
+    id: 2,
+    name: "Active",
+    category: "Books",
+    currently: 10,
+    Buy_Price: 15,
+    First_Bid: 10,
+    Number_of_Bids: 0,
+    Bids: null,
+    started: 19092025,
+    ends: 20092025,
+    seller: {
+        sellerId: "BookStore123",
+        rating: "98.5%",
+    },
+    description: "Something something",
+    image: "📚",
+    location: {
+        lat: 40.7128,
+        lng: -74.0060,
+    },
+    city: "New York, NY",
+    isActive: 1
+
+    }, {
+    id: 3,
+    name: "Not Active",
+    category: "Books",
+    currently: 10,
+    Buy_Price: 15,
+    First_Bid: 10,
+    Number_of_Bids: 0,
+    Bids: null,
+    started: 19092025,
+    ends: 20092025,
+    seller: {
+        sellerId: "BookStore123",
+        rating: "98.5%",
+    },
+    description: "Something something",
+    image: "📚",
+    location: {
+        lat: 40.7128,
+        lng: -74.0060,
+    },
+    city: "New York, NY",
+    isActive: 0
+
+    }
+};

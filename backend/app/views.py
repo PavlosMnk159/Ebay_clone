@@ -34,3 +34,5 @@ def status_view(request):
     ready = AppState.get_ready_status()
     logger.info(f"ready: {ready}")
     return Response({"ready": ready})
+
+

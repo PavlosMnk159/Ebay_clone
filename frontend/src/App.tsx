@@ -1,37 +1,71 @@
 import { useState } from "react";
+import { useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-import { LoginPage } from './utils.tsx';
-import { RegisterPage } from './utils.tsx';
-import { ChatPage } from './ChatPage.tsx';
+import { LoginPage } from './Pages/LoginPage.tsx';
+import { RegisterPage } from './Pages/RegisterPage.tsx';
+// import { WaitingPage } from './Pages/WaitingPage.tsx';
+// import { SellPage } from './Pages/WaitingPage.tsx';
+
+import { EBayPage } from './Pages/eBayPage.tsx';
+import { MakeAuction } from './Pages/MakeAuctionPage.tsx';
+import { AuctionPage } from './Pages/myAuctionPage.tsx';
+import { ItemBidPage } from './Pages/ItemBidPage.tsx'
+import { BidPage } from './Pages/myBidPage.tsx'
+
+import { AdminPage } from './Pages/AdminPage.tsx';
+import { RequestPage } from './Pages/RequestsPage.tsx';
+
+import { BadeBayPage } from './Pages/eBayPageGuest.tsx';
+// import { ChatPage } from './Pages/CustomChatPage.tsx';
+import { ChatPage } from './Pages/ChatPage.tsx';
 
 
-
-
-
-function App() {
-  const [currentPage, setCurrentPage] = useState("login");
+function MainApp() {
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showChat, setShowChat] = useState(false); 
-  
+  const [isAdmin, setIsAdmin] = useState(false);
+ 
+  const navigate = useNavigate(); // Now inside Router context
+
+  const navigateToEbay = () => {
+    navigate('/ebay');
+  }
+
+  const navigateToMyAuctions = () => {
+    navigate('/myAuction');
+  }
+
+  const navigateToChat = () => {
+    navigate('/chat');
+  }
+
+
+  const handleAdmin = (success: boolean) => {
+    if (success) {
+
+      setIsAdmin(true);
+      console.log("Admin logged in successfully!");
+      // Optionally navigate to a default page after login
+    }
+  };
+
   const handleLogin = (success: boolean) => {
     if (success) {
+
       setIsLoggedIn(true);
-      console.log("User logged in successfully!");
+      console.log("Admin logged in successfully!");
+      // Optionally navigate to a default page after login
     }
   };
 
   const handleRegister = (success: boolean) => {
     if (success) {
-      setCurrentPage("login");
-      setShowRegisterSuccess(true); 
+      setShowRegisterSuccess(true);
       console.log("User registered successfully! Please sign in.");
     }
   };
 
-
-
-  // registration success message
+  // Registration success message
   if (showRegisterSuccess) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -44,13 +78,13 @@ function App() {
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Registration Successful!</h2>
             <p className="text-gray-600 mb-6">Your account has been created successfully. You can now sign in with your credentials.</p>
-            <p className="text-gray-600 mb-6">TODO "2. Θ επιτυχισ ειςαγωγι των ςτοιχείων που απαιτοφνται κα οδθγεί 
+            <p className="text-gray-600 mb-6">TODO "2. Θ επιτυχισ ειςαγωγι των ςτοιχείων που απαιτοφνται κα οδθγεί
               τον καινοφργιο χριςτθ ςε ςελίδα που κα τον ενθμερϊνει ότι εκκρεμεί θ ζγκριςθ τθσ
               αίτθςθσ εγγραφισ του ςτθν εφαρμογι από τον διαχειριςτι."</p>
-            <button 
+            <button
               onClick={() => {
                 setShowRegisterSuccess(false);
-                setCurrentPage("login");
+                navigate('/login');
               }}
               className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-200"
             >
@@ -62,62 +96,190 @@ function App() {
     );
   }
 
+  //Routes
+
+  return (
+    <Routes>
+
+      {/*login*/}
+      <Route path='/login' element={
+        !isLoggedIn ?
+        <LoginPage onLogin={handleLogin} 
+                  onAdmin={handleAdmin} /> :
+        
+                  isAdmin ?
+                  <AdminPage onLogout={() => {
+                    setIsLoggedIn(false);
+                    setIsAdmin(false);
+                    navigate('/login');
+                  }} /> :
+                <Navigate to="/homepage" replace />
+      } />
+
+      {/*admin*/}
+      <Route path='/admin' element={
+        isAdmin ?
+          <AdminPage onLogout={() => {
+            setIsLoggedIn(false);
+            setIsAdmin(false);
+            navigate('/login');
+          }} /> :
+        <Navigate to="/login" replace />
+      } />
 
 
-  // chat MBW
-  if (isLoggedIn && showChat) {
-    return <ChatPage onLogout={() => { 
-      setIsLoggedIn(false); 
-      setShowChat(false); 
-    }} />;
-  }  
+      {/*register*/}
+      <Route path='/register' element={<RegisterPage onRegister={handleRegister} />} />
+
+      {/* HomePage */}
+      <Route path='/homepage' element={
+        isLoggedIn ? (
+          <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h1 className="text-2xl font-bold text-center mb-4">Welcome to eBuy</h1>
+              <p className="text-gray-600 text-center mb-6">You are now logged in.</p>
+             
+              <button
+                onClick={navigateToEbay} 
+                className="w-full bg-blue-500 text-white py-2 px-2 rounded-lg hover:bg-blue-600 mb-2">
+
+                Start Browsing
+              </button>
+             
+              <button
+                onClick={navigateToMyAuctions} 
+                className="w-full bg-orange-500 text-white py-2 px-2 rounded-lg hover:bg-orange-600 mb-2">
+
+                Start Auctioning
+              </button>
+             
+              <button
+                onClick={navigateToChat} 
+                className="w-full bg-green-500 text-white py-2 px-2 rounded-lg hover:bg-green-600 mb-2">
+
+                Start Chatting
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsLoggedIn(false);
+                  navigate('/login');
+                }}
+                className="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">
+
+                Logout
+              </button>
+            </div>
+          </div>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*ebay*/}
+      <Route path='/ebay' element={
+        isLoggedIn ? (
+          <EBayPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*myAuction*/}
+      <Route path='/myAuction' element={
+        isLoggedIn ? (
+          <AuctionPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*my bids */}
+      <Route path='/mybids' element={
+        isLoggedIn ? (
+          <BidPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*Item bidds */}
+      <Route path='/itembids/:productId' element={
+        isLoggedIn ? (
+          <ItemBidPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*makeAuction*/}
+      <Route path='/makeAuction' element={
+        isLoggedIn ? (
+          <MakeAuction onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*chat*/}
+      <Route path='/chat' element={
+        isLoggedIn ? (
+          <ChatPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*ebay Guest only*/}
+      <Route path='/badebay' element={
+          <BadeBayPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+      } />
+
+      {/*admin requests*/}
+      <Route path='/requests' element={
+        isAdmin ?
+          <RequestPage onLogout={() => {
+            setIsLoggedIn(false);
+            setIsAdmin(false);
+            navigate('/login');
+          }} /> :
+          <Navigate to="/login" replace />
+
+      } />
 
 
-  // after login success
-  if (isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-lg">
-          <h1 className="text-2xl font-bold text-center mb-4">Welcome to INSERT APP NAME HERE</h1>
-          <p className="text-gray-600 text-center">You are now logged in.</p>
-          {/* Show chat */}
-          <button 
-          onClick={() => {setShowChat(true)}}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mb-2">
-          Start Chat
-          </button>
-          {/* logout */}
-          <button 
-            onClick={() => setIsLoggedIn(false)}
-            className="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
-    
 
-
-
-  // login <--> register , links
-  return currentPage === "login" ? (
-    <LoginPage 
-      onLogin={handleLogin}
-      onNavigateToRegister={() => setCurrentPage("register")}
-    />
-  ) : (
-    <RegisterPage 
-      onRegister={handleRegister}
-      onNavigateToLogin={() => setCurrentPage("login")}
-    />
-
-    
+    </Routes>
   );
 }
 
-
-
+function App() {
+  return (
+    <BrowserRouter>
+      <MainApp />
+    </BrowserRouter>
+  );
+}
 
 export default App;
