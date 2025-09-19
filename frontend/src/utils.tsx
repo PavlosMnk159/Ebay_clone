@@ -161,7 +161,7 @@ export function RegisterPage({
 
   const [passwordError, setPasswordError] = useState('');
   const [passwordConfirmError, setPasswordConfirmError] = useState('');
-  const [usernameError, setusernameError] = useState('');
+  const [usernameError] = useState('');
 
   const handleSubmit = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !username.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !phone.trim() || !house_number.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !postal_code.trim())  return;

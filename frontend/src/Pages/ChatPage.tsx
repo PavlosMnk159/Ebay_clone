@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import fetch_with_auth from ".././Authentication/axios";
 import { useNavigate } from "react-router";
 
 export function ChatPage({ onLogout }: { onLogout: () => void; }) {
+
 
     const conversations = [
         { id: 1, name: "TechBooks", lastMessage: "How about EUR 42?", time: "10:37 AM", avatar: "💻", unread: 0 },
@@ -136,11 +139,11 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
         }
     };
 
-    // Effect hook to poll backend status on component mount
+    // Poll backend status on mount
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
         
-        // Function to check if backend is ready
+        // Function to check if backend status
         const checkStatus = async () => {
             try {
                 // Make request to backend status endpoint
@@ -153,15 +156,39 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
                     if (interval) clearInterval(interval);
                 }
             } catch (e) {
+                console.log("error while checking status:", e);
                 // Ignore errors and continue polling
             }
         };
         
         checkStatus();
         interval = setInterval(checkStatus, 1500);
-        
         return () => clearInterval(interval);
     }, []);
+
+    // Check if there are any messages
+    useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    const checkMessages = async () => {
+      try  {
+        const res = await fetch_with_auth.get("/check_messages/");
+        const data = await res.data;
+        console.log(data);
+        if (data.has_messages) {
+          const mes = await fetch_with_auth("/get_messages/");
+          const message_data = await mes.data;
+          console.log(message_data);
+        }
+
+      } catch (e) {
+        console.log("error while checking for new messages:", e);
+      }
+    }
+
+    checkMessages();
+    interval = setInterval(checkMessages, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
     // Function to send message to backend
     const sendMessage = async () => {
@@ -190,22 +217,11 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
         setIsLoading(true);
         
         try {
-            const response = await fetch("http://localhost:8000/chat/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ 
-                    message: inputText,
-                    conversation: activeChat // Include conversation context
-                }),
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
+            const response = await fetch_with_auth.post("/chat/", {
+        message: inputText
+      });
+      const data = response.data;
+      
             
             // Add bot response to the current conversation
             const botMessage = {         
@@ -223,6 +239,13 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
             }));
             
         } catch (error) {
+            if (axios.isAxiosError(error)) {
+                if (error.response) {
+                console.log("HTTP error", error.response.status, error.response.data);
+                } else {
+                console.log("Did not receive response");
+                }
+            }
             console.error("Error sending message:", error);
             const errorMessage = {         
                 isUser: false,

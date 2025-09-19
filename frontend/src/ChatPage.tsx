@@ -21,7 +21,6 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
         }
       } catch (e) {
         console.log("error while checking status:", e);
-        // ignore errors, keep polling
       }
     };
 
@@ -63,7 +62,6 @@ export function ChatPage({ onLogout }: { onLogout: () => void; }) {
     setIsLoading(true);
     
     try {
-      // Call the real API
       const response = await fetch_with_auth.post("/chat/", {
         message: inputText
       });

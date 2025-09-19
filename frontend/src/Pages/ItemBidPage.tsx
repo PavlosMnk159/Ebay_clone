@@ -18,30 +18,30 @@ interface Bidder {
     country: string;
 }
 
-interface Product {
-    id: number;
-    name: string;
-    category: string;
-    currently: number;
-    Buy_Price: number;
-    First_Bid:number;
-    Number_of_Bids: number;
-    Bids: Bid[] | null;
-    started: number;
-    ends: number;
-    seller: {
-        sellerId: string,
-        rating: string
-    };
-    description: string;
-    image: string;
-    location: {
-        lat: number,
-        lng: number
-    };
-    city: string;
-    isActive: number;
-}
+// interface Product {
+//     id: number;
+//     name: string;
+//     category: string;
+//     currently: number;
+//     Buy_Price: number;
+//     First_Bid:number;
+//     Number_of_Bids: number;
+//     Bids: Bid[] | null;
+//     started: number;
+//     ends: number;
+//     seller: {
+//         sellerId: string,
+//         rating: string
+//     };
+//     description: string;
+//     image: string;
+//     location: {
+//         lat: number,
+//         lng: number
+//     };
+//     city: string;
+//     isActive: number;
+// }
 
 
 

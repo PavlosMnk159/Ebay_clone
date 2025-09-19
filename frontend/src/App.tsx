@@ -2,11 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 
-
-import { LoginPage } from './utils.tsx';
-import { RegisterPage } from './utils.tsx';
-import { ChatPage } from './ChatPage.tsx';
-
 import { loginUser } from "./Authentication/auth.ts";
 import { registerUser } from "./Authentication/auth.ts";
 
@@ -37,7 +32,6 @@ function MainApp() {
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showChat, setShowChat] = useState(false); 
   // const [hasMessages, setHasMessages] = useState(false)
  
   const navigate = useNavigate(); // Now inside Router context
@@ -54,12 +48,15 @@ function MainApp() {
     navigate('/chat');
   }
 
+  console.log("App tsx running");
 
-  const handleAdmin = (success: boolean) => {
-    if (success) {
+
+  const handleAdmin = (data: LoginFormData) => {
+    if (true) {
 
       setIsAdmin(true);
       console.log("Admin logged in successfully!");
+      console.log(data.username);
       // Optionally navigate to a default page after login
     }
   };
@@ -69,6 +66,7 @@ function MainApp() {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     console.log('the token is: ', token);  
+    console.log('curent page: ', currentPage);
   
   }, []);
 

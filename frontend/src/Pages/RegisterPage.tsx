@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RegisterFormData } from ".././types/auth_types";
 import { useNavigate } from "react-router";
 
 export function RegisterPage({ 
@@ -7,31 +8,31 @@ export function RegisterPage({
 
 }: { 
 
-  onRegister: (success: boolean) => void;
+  onRegister: (data: RegisterFormData) => void;
 
 }) 
 
 {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [userName, setUserName] = useState("");
+  const [username, setusername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [address, setAddress] = useState("");
-  const [telephone, setTelephone] = useState("");
-  const [addressNumber, setAddressNumber] = useState("");
+  const [phone, setTelephone] = useState("");
+  const [house_number, setAddressNumber] = useState("");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [region, setRegion] = useState("");
   const [AFM, setAFM] = useState("");
-  const [regionNumber, setRegionNumber] = useState("");
+  const [postal_code, setRegionNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
 
   const [passwordError, setPasswordError] = useState('');
   const [passwordConfirmError, setPasswordConfirmError] = useState('');
-  const [usernameError, setusernameError] = useState('');
+  const [usernameError] = useState('');
 
   
   const nav = useNavigate();
@@ -41,7 +42,7 @@ export function RegisterPage({
   }
   
   const handleSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !userName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !telephone.trim() || !addressNumber.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !regionNumber.trim())  return;
+    if (!firstName.trim() || !lastName.trim() || !username.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !phone.trim() || !house_number.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !postal_code.trim())  return;
     
     {/* Alerts help to fill the neccesary gaps */}
 
@@ -55,67 +56,18 @@ export function RegisterPage({
       return;
     }
 
-    if (userName == "stavros"){
-      alert("Username already used");
-      return;
-    }
-
     setIsLoading(true);
     
 
-     try {
-    // Prepare user data
-    const userData = {
-      firstName,
-      lastName,
-      userName,
-      email,
-      password,
-      address,
-      telephone,
-      addressNumber,
-      city,
-      country,
-      region,
-      AFM,
-      regionNumber
-    };
+    const userData = {username, password, email, country, region, city, postal_code, address, house_number, phone, AFM}
 
-    // Send to backend
-    const RegisterResponse = await fetch("http://localhost:8000/register", {
-      method: "REGISTER",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    });
 
-    if (!RegisterResponse.ok) {
-      throw new Error(`HTTP error! status: ${RegisterResponse.status}`);
-    }
 
-    const data = await RegisterResponse.json();
-    
-    if (data.success) {
-      onRegister(true);
-    } else {
-      alert(data.message || "Registration failed 1");
-      onRegister(false);
-    }
-    
-  } catch (error) {
-    console.error("Registration error:", error);
-    alert("Registration failed 2. Please try again.");
-    onRegister(false);
-  } finally {
-    setIsLoading(false);
-  }
-
-    // // Simulate loading
-    // setTimeout(() => {
-    //   setIsLoading(false);
-    //   onRegister(true); // Just pass true to register regardless of credentials
-    // }, 1000);
+    // Simulate loading
+    setTimeout(() => {
+      setIsLoading(false);
+      onRegister(userData); // Just pass true to register regardless of credentials
+    }, 1000);
   };
 
   return (
@@ -138,16 +90,14 @@ export function RegisterPage({
 
             
             <div>
-              <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-2">
-                Username
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                username
               </label>
               <input
-                id="userName"
+                id="username"
                 type="text"
-                value={userName}
-                onChange={(e) => { setUserName(e.target.value); 
-                                   e.target.value == "stavros" ? setusernameError("Username already used")
-                                                               : setusernameError(""); }}
+                value={username}
+                onChange={(e) => { setusername(e.target.value)}}
                 className={`w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                   usernameError
                     ? 'border-red-500 focus:ring-red-500 placeholder-red-400' 
@@ -268,9 +218,9 @@ export function RegisterPage({
                   Telephone
                 </label>
                 <input
-                  id="telephone"
+                  id="phone"
                   type="text"
-                  value={telephone}
+                  value={phone}
                   onChange={(e) => setTelephone(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Number"
@@ -329,7 +279,7 @@ export function RegisterPage({
                 <input
                   id="addressNumber"
                   type="text"
-                  value={addressNumber}
+                  value={house_number}
                   onChange={(e) => setAddressNumber(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your addressNumber"
@@ -352,23 +302,23 @@ export function RegisterPage({
                 />
               </div>
               <div>
-                <label htmlFor="regionNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="postal_code" className="block text-sm font-medium text-gray-700 mb-2">
                   Τ.Κ.
                 </label>
                 <input
-                  id="regionNumber"
+                  id="postal_code"
                   type="text"
-                  value={regionNumber}
+                  value={postal_code}
                   onChange={(e) => setRegionNumber(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your regionNumber"
+                  placeholder="Enter your postal_code"
                 />
               </div>
             </div>
 
             <button
               onClick={handleSubmit}
-              disabled={isLoading || !firstName.trim() || !lastName.trim() || !userName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !telephone.trim() || !addressNumber.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !regionNumber.trim() }
+              disabled={isLoading || !firstName.trim() || !lastName.trim() || !username.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !phone.trim() || !house_number.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !postal_code.trim() }
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? (
