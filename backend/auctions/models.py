@@ -9,6 +9,8 @@ class Category(models.Model):
         return self.name
 
 class Item(models.Model):
+
+
     item_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200)
     categories = models.ManyToManyField(Category)
@@ -21,10 +23,13 @@ class Item(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     country = models.CharField(max_length=100, null=True)
     started = models.DateTimeField()
-    ends = models.DateTimeField()
+    ends = models.DateTimeField(db_index=True) # This is indexed so it can efficiently be queried when an auction item expires
     seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='items_for_sale')
     description = models.TextField(null=True)
     active = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ["ends"]
 
     def __str__(self):
         return f"{self.name} ({self.item_id})"

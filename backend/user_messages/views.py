@@ -23,6 +23,13 @@ class Chat(APIView):
 
         return Response({'response': response}, status=status.HTTP_200_OK)
     
+class GetConversations(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        pass
+    
 class CheckMessages(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

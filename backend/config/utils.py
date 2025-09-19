@@ -11,7 +11,8 @@ from django.utils.timezone import make_aware
 from faker import Faker
 
 from User.models import CustomUser
-from auctions.models import Item
+from auctions.models import Item, Bid
+
 
 
 
@@ -108,7 +109,17 @@ def load_items_from_xml(path):
                 if seller_id:
                     seller_ids.add(seller_id)
 
-        # Query existing users from DB (by username or email)
+            # Also collect bidder IDs
+            bids_tag = item_el.find('Bids')
+            if bids_tag is not None:
+                for bid_el in bids_tag.findall('Bid'):
+                    bidder_tag = bid_el.find('Bidder')
+                    if bidder_tag is not None:
+                        bidder_id = bidder_tag.attrib.get('UserID')
+                        if bidder_id:
+                            seller_ids.add(bidder_id)  # reuse seller_ids set for caching
+
+        # Query existing users from DB
         existing_users_qs = CustomUser.objects.filter(Q(username__in=seller_ids) | Q(email__in=seller_ids))
         seen_usernames = set(u.username for u in existing_users_qs)
         user_cache = {u.username: u for u in existing_users_qs}
@@ -116,6 +127,7 @@ def load_items_from_xml(path):
 
         items_to_create = []
         users_to_create = []
+        bids_to_create = []
 
         processed_count = 0
         skipped_count = 0
@@ -140,17 +152,13 @@ def load_items_from_xml(path):
 
                 # Handle categories
                 categories = [c.text for c in item_el.findall('Category')]
-                
-
 
                 # Handle seller
                 seller_tag = item_el.find('Seller')                     
                 seller_id = seller_tag.attrib.get('UserID') if seller_tag is not None else None
 
-                # create user if it doesnt exist already
                 seller = user_cache.get(seller_id)
                 if not seller:
-                    # Create new user instance but don't save yet
                     seller = create_random_user(seller_id, seen_usernames)
                     if seller:
                         users_to_create.append(seller)
@@ -159,14 +167,14 @@ def load_items_from_xml(path):
                         skipped_count += 1
                         continue
 
-                # Create Item object with seller foreign key as CustomUser instance
+                # Create Item object
                 item = Item(
                     item_id=item_id,
                     name=name,
                     currently=currently,
                     buy_price=buy_price,
                     first_bid=first_bid,
-                    number_of_bids=0,
+                    number_of_bids=int(item_el.findtext('Number_of_Bids') or 0),
                     location=location,
                     country=country,
                     started=started_dt,
@@ -175,20 +183,52 @@ def load_items_from_xml(path):
                     description=description,
                 )
                 items_to_create.append(item)
+
+                # Handle bids
+                bids_tag = item_el.find('Bids')
+                if bids_tag is not None:
+                    for bid_el in bids_tag.findall('Bid'):
+                        bidder_tag = bid_el.find('Bidder')
+                        if not bidder_tag is None or len(bidder_tag) == 0:
+                            continue
+
+                        bidder_id = bidder_tag.attrib.get('UserID')
+                        bidder = user_cache.get(bidder_id)
+                        if not bidder:
+                            bidder = create_random_user(bidder_id, seen_usernames)
+                            if bidder:
+                                users_to_create.append(bidder)
+                                user_cache[bidder_id] = bidder
+                            else:
+                                continue  # skip this bid if bidder can't be created
+
+                        bid_time = make_aware(datetime.strptime(bid_el.findtext('Time'), dt_format))
+                        bid_amount = parse_price(bid_el.findtext('Amount'))
+
+                        bid = Bid(
+                            item=item,
+                            bidder=bidder,
+                            time=bid_time,
+                            amount=bid_amount
+                        )
+                        bids_to_create.append(bid)
+
                 processed_count += 1
 
             except Exception as e:
                 error_count += 1
                 print(f"Error loading item {item_el.get('ItemID')}: {e}")
 
-        # Bulk create new users and items inside a transaction
+        # Bulk create new users, items, and bids inside a transaction
         try:
             with transaction.atomic():
                 if users_to_create:
                     CustomUser.objects.bulk_create(users_to_create, batch_size=100)
                 if items_to_create:
                     Item.objects.bulk_create(items_to_create, batch_size=100)
-            print(f"Saved {len(users_to_create)} users and {len(items_to_create)} items from {file}")
+                if bids_to_create:
+                    Bid.objects.bulk_create(bids_to_create, batch_size=100)
+            print(f"Saved {len(users_to_create)} users, {len(items_to_create)} items, {len(bids_to_create)} bids from {file}")
         except Exception as e:
             print(f"Error during bulk save for {file}: {e}")
 
