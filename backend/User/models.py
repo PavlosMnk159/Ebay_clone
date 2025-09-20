@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from phonenumber_field.modelfields import PhoneNumberField
 
 class CustomUser(AbstractUser):
+    is_admin = models.BooleanField()
     country = models.CharField(max_length=256)
     region = models.CharField(max_length=256)
     city = models.CharField(max_length=256)

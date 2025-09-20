@@ -82,6 +82,7 @@ def load_users_from_xml(file_path):
                 house_number=int(user_el.findtext('HouseNumber') or 0),
                 phone=user_el.findtext('Phone'),
                 AFM=int(user_el.findtext('AFM') or 0),
+                is_admin=False
             )
             print(f"Created user: {user.username}")
         except Exception as e:
@@ -233,3 +234,6 @@ def load_items_from_xml(path):
             print(f"Error during bulk save for {file}: {e}")
 
         print(f"Processed {processed_count} items, skipped {skipped_count}, errors {error_count}")
+
+def create_admin():
+    pass
