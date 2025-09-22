@@ -24,5 +24,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
             house_number=validated_data.get('house_number'),
             phone=validated_data.get('phone'),
             AFM=validated_data.get('AFM'),
-            is_admin=False
         )
+    
+class UserDetailsSerialiser(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'country', 'region', 'city', 'postal_code', 'address', 'house_number', 'phone', 'AFM']

@@ -9,6 +9,9 @@ myAuction
     editAuction
     deleteAuction
 
+make all options available for creation
+add option to create a category
+
 
 
 

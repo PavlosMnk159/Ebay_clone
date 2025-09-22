@@ -1,3 +1,4 @@
+import fetch_with_auth from "@/Authentication/axios";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -22,12 +23,10 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
   // Selling page state
   const [sellingData, setSellingData] = useState({
     name: "",
-    category: [] as string[],
-    currentBestPrice: "",
-    targetPrice: "",
-    targetPriceEnabled: false,
-    lowestPrice: "",
-    time: "",
+    categories: [] as string[],
+    currently: "",
+    buy_price: "",
+    ends: "",
     description: "",
     image: null as File | null
   });
@@ -59,22 +58,42 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
     handleSellingDataChange('image', file);
   };
 
-  const handleStartAuction = () => {
+  const handleStartAuction = async () => {
     console.log("Starting auction with data:", sellingData);
     alert("Auction started successfully! Your item is now live.");
-    
-    // Reset form after successful submission
-    setSellingData({
-      name: "",
-      category: [],
-      currentBestPrice: "",
-      targetPrice: "",
-      targetPriceEnabled: false,
-      lowestPrice: "",
-      time: "",
-      description: "",
-      image: null
-    });
+
+    // here send post to backend
+    try {
+
+      const res = await fetch_with_auth.post('/create_item/', sellingData);
+      
+      if (res.status != 201) {
+        console.log("Could not create item: ", res.data);
+      } else {
+
+        // Reset form after successful submission
+        setSellingData({
+          name: "",
+          categories: [],
+          currently: "",
+          buy_price: "",
+          ends: "",
+          description: "",
+          image: null
+        });
+
+      }
+
+    } catch(e: any) {
+      if (e.response) {
+        console.log("error while creating item:", e.response.data);
+      } else {
+        console.log("error while creating item");
+      }
+    }
+
+
+
     
     // Reset file input
     const fileInput = document.getElementById('image-upload') as HTMLInputElement;
@@ -83,10 +102,9 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
   };
 
   const isFormValid = sellingData.name && 
-                     sellingData.category && 
-                     sellingData.currentBestPrice && 
-                     sellingData.lowestPrice &&
-                     sellingData.time;
+                     sellingData.categories && 
+                     sellingData.currently &&
+                     sellingData.ends;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,7 +186,7 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
               </p>
             </div>
 
-            {/* Category */}
+            {/* Categories */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Category *
@@ -181,12 +199,12 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                     <input
                       type="checkbox"
                       value={cat}
-                      checked={sellingData.category.includes(cat)}
+                      checked={sellingData.categories.includes(cat)}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          handleSellingDataChange('category', [...sellingData.category, cat]);
+                          handleSellingDataChange('categories', [...sellingData.categories, cat]);
                         } else {
-                          handleSellingDataChange('category', sellingData.category.filter(cat => cat !== cat));
+                          handleSellingDataChange('categories', sellingData.categories.filter(c => c !== cat));
                         }
                       }}
                       className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -278,8 +296,8 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 type="text"
                 placeholder="Enter a finisehd date"
                 className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                value={sellingData.time}
-                onChange={(e) => handleSellingDataChange('time', e.target.value)}
+                value={sellingData.ends}
+                onChange={(e) => handleSellingDataChange('ends', e.target.value)}
               />
             </div>
 
@@ -315,8 +333,8 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                     min="0.01"
                     placeholder="0.00"
                     className="w-full pl-8 p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                    value={sellingData.currentBestPrice}
-                    onChange={(e) => handleSellingDataChange('currentBestPrice', e.target.value)}
+                    value={sellingData.currently}
+                    onChange={(e) => handleSellingDataChange('currently', e.target.value)}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
@@ -337,8 +355,8 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                     min="0.01"
                     placeholder="0.00"
                     className="w-full pl-8 p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                    value={sellingData.lowestPrice}
-                    onChange={(e) => handleSellingDataChange('lowestPrice', e.target.value)}
+                    value={sellingData.currently}
+                    onChange={(e) => handleSellingDataChange('currently', e.target.value)}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
@@ -355,14 +373,14 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-600">Enable Buy It Now:</span>
                     <button
-                      onClick={() => handleSellingDataChange('targetPriceEnabled', !sellingData.targetPriceEnabled)}
+                      onClick={() => handleSellingDataChange('buy_price', !sellingData.buy_price)}
                       className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                        sellingData.targetPriceEnabled ? 'bg-green-600' : 'bg-gray-300'
+                        sellingData.buy_price ? 'bg-green-600' : 'bg-gray-300'
                       }`}
                     >
                       <span
                         className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-lg ${
-                          sellingData.targetPriceEnabled ? 'translate-x-6' : 'translate-x-1'
+                          sellingData.buy_price ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
                     </button>
@@ -371,25 +389,25 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 
                 <div className="relative">
                   <span className={`absolute left-3 top-4 text-lg ${
-                    !sellingData.targetPriceEnabled ? 'text-gray-400' : 'text-gray-500'
+                    !sellingData.buy_price ? 'text-gray-400' : 'text-gray-500'
                   }`}>€</span>
                   <input
                     type="number"
                     step="0.01"
                     min="0.01"
                     placeholder="0.00"
-                    disabled={!sellingData.targetPriceEnabled}
+                    disabled={!sellingData.buy_price}
                     className={`w-full pl-8 p-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg ${
-                      !sellingData.targetPriceEnabled 
+                      !sellingData.buy_price 
                         ? 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400' 
                         : 'bg-white border-gray-300'
                     }`}
-                    value={sellingData.targetPrice}
-                    onChange={(e) => handleSellingDataChange('targetPrice', e.target.value)}
+                    value={sellingData.buy_price}
+                    onChange={(e) => handleSellingDataChange('buy_price', e.target.value)}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  {sellingData.targetPriceEnabled 
+                  {sellingData.buy_price 
                     ? "Buyers can purchase immediately at this price, ending the auction"
                     : "Toggle on to allow instant purchases at a fixed price"
                   }
@@ -405,12 +423,12 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 <h4 className="font-semibold text-green-800 mb-2">✅ Auction Summary</h4>
                 <div className="text-sm text-green-700 space-y-1">
                   <p><strong>Item:</strong> {sellingData.name}</p>
-                  <p><strong>Category:</strong> {sellingData.category}</p>
-                  <p><strong>Starting Bid:</strong> €{sellingData.currentBestPrice}</p>
-                  {sellingData.targetPriceEnabled && sellingData.targetPrice && (
-                    <p><strong>Buy It Now:</strong> €{sellingData.targetPrice}</p>
+                  <p><strong>Category:</strong> {sellingData.categories}</p>
+                  <p><strong>Starting Bid:</strong> €{sellingData.currently}</p>
+                  {sellingData.buy_price && sellingData.buy_price && (
+                    <p><strong>Buy It Now:</strong> €{sellingData.buy_price}</p>
                   )}
-                  <p><strong>Reserve Price:</strong> €{sellingData.lowestPrice}</p>
+                  <p><strong>Reserve Price:</strong> €{sellingData.currently}</p>
                   {sellingData.image && (
                     <p><strong>Image:</strong> ✅ Uploaded ({sellingData.image.name})</p>
                   )}

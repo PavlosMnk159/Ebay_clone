@@ -1,3 +1,4 @@
+import { fetch_get } from "@/config/url";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 declare global {
@@ -46,6 +47,13 @@ interface Product {
     };
     city: string;
     isActive: number;
+}
+
+interface Filters {
+    category?: string;
+    min?: string;
+    max?: string;
+    query?: string;
 }
 
 
@@ -394,12 +402,39 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
 
 
 export function EBayPage({ onLogout } : { onLogout: () => void;}){
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("all");
-    const [priceRange, setPriceRange] = useState({ min: "", max: "" });
     const [selectedFormat, setSelectedFormat] = useState("all");
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<String[]>([]);
+    
+    const [filters, setFilters] = useState<Filters>({});
+
+
+    useEffect(() => {
+        const fetch_products = async () => {
+            try {
+                const data = await fetch_get('/items/');
+                setProducts(data);
+            } catch (error) {
+                console.log("Error while fetching products: ", error);
+            }
+        }
+
+        const fetch_categories = async () => {
+            try {
+                const data = await fetch_get('/categories');
+                setCategories(data);
+                console.log(data);
+            } catch (error) {
+                console.log("Error while fetching categories: ", error);
+            }
+        }
+
+        fetch_products();
+        fetch_categories();
+    }, []);
 
     const nav = useNavigate();
 
@@ -411,14 +446,27 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
         nav('/chat')
     };
 
-    const handleSearch = () => {
-        console.log("Searching for:", searchQuery);
+    const applyFilters = async () => {
+        try {
+            console.log("applying filters");
+            // get only the filter values that have a value
+            const entries = Object.entries(filters).filter(
+                ([_, value]) => value != null && value.trim() !== ''
+            );
+            
+            const queryString = new URLSearchParams(entries as [string, string][]).toString();
+            const endpoint = queryString ? `/items/?${queryString}` : `/items/`;
+            const data = await fetch_get(endpoint)
+            setProducts(data);
+        } catch (error) {
+            console.log("Error while applying filters: ", error);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === "Enter"){
             e.preventDefault();
-            handleSearch();
+            applyFilters();
         }
     };
 
@@ -433,44 +481,44 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
     };
 
 
-  const products = [
-    {
-    id: 1,
-    name: "The Great Gatsby - Classic Literature",
-    category: "Books",
-    currently: 12,
-    Buy_Price: 16,
-    First_Bid: 12,
-    Number_of_Bids: 2,
-    Bids: null,
-    started: 19092025,
-    ends: 19092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 1
+//   const products = [
+//     {
+//     id: 1,
+//     name: "The Great Gatsby - Classic Literature",
+//     category: "Books",
+//     currently: 12,
+//     Buy_Price: 16,
+//     First_Bid: 12,
+//     Number_of_Bids: 2,
+//     Bids: null,
+//     started: 19092025,
+//     ends: 19092025,
+//     seller: {
+//         sellerId: "BookStore123",
+//         rating: "98.5%",
+//     },
+//     description: "Something something",
+//     image: "📚",
+//     location: {
+//         lat: 40.7128,
+//         lng: -74.0060,
+//     },
+//     city: "New York, NY",
+//     isActive: 1
 
-    }
+//     }
    
-  ];
+//   ];
 
-  const categories = [
-    "All Categories",
-    "Books & Magazines",
-    "Textbooks",
-    "Fiction",
-    "Non-Fiction",
-    "Children's Books",
-    "Comics & Graphic Novels"
-  ];
+//   const categories = [
+//     "All Categories",
+//     "Books & Magazines",
+//     "Textbooks",
+//     "Fiction",
+//     "Non-Fiction",
+//     "Children's Books",
+//     "Comics & Graphic Novels"
+//   ];
 
   const formats = [
     "All Formats",
@@ -502,13 +550,13 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                                 type="text" 
                                 placeholder="Search for anything"
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                value={filters.query}
+                                onChange={(e) => setFilters({...filters, query: e.target.value})}
                                 onKeyDown={handleKeyPress}
                                 />
 
                                 <button
-                                    onClick={handleSearch}
+                                    onClick={applyFilters}
                                     className="bg-blue-600 text-white px-6 py-2 rounded-r-lg hover:bg-blue-700 transition-colors"
                                 >
                                     Search
@@ -555,8 +603,8 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                         <div className="mb-6">
                             <h4 className="font-medium text-gray-700 mb-2">Category</h4>
                             <select 
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                value={filters.category}
+                                onChange={(e) => setFilters({...filters, category: e.target.value})}
                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 {categories.map((category, index) => (
@@ -575,16 +623,16 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                                     type="number"
                                     placeholder="Min"
                                     className="w-20 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={priceRange.min}
-                                    onChange={(e) => setPriceRange({...priceRange, min: e.target.value})} 
+                                    value={filters.min}
+                                    onChange={(e) => setFilters({...filters, min: e.target.value})} 
                                 />
                                 <span className="self-center text-gray-500">to</span>
                                 <input 
                                     type="number"
                                     placeholder="Max"
                                     className="w-20 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={priceRange.max}
-                                    onChange={(e) => setPriceRange({...priceRange, max: e.target.value})} 
+                                    value={filters.max}
+                                    onChange={(e) => setFilters({...filters, max: e.target.value})} 
                                 />
                             </div>
                         </div>
@@ -612,7 +660,7 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
 
 
                         {/* Apply Filters Button */}
-                        <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        <button onClick={applyFilters} className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
                             Apply Filters
                         </button>
                     </div>

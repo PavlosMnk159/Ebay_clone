@@ -18,7 +18,6 @@ export function LoginPage({
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log("wtf");
   const nav = useNavigate();
 
   const navigate= ()=>{

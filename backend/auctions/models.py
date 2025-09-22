@@ -16,18 +16,19 @@ class Item(models.Model):
     categories = models.ManyToManyField(Category)
     currently = models.DecimalField(max_digits=10, decimal_places=2)
     buy_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    first_bid = models.DecimalField(max_digits=10, decimal_places=2)
+    first_bid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     number_of_bids = models.IntegerField(default=0)
-    location = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, null=True, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-    country = models.CharField(max_length=100, null=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
     started = models.DateTimeField()
     ends = models.DateTimeField(db_index=True) # This is indexed so it can efficiently be queried when an auction item expires
     seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='items_for_sale')
-    description = models.TextField(null=True)
+    description = models.TextField(null=True, blank=True)
     active = models.BooleanField(default=False)
-    
+    buyer = models.ForeignKey(CustomUser, null=True, blank=True, on_delete=models.SET_NULL, related_name='bought_items')
+
     class Meta:
         ordering = ["ends"]
 

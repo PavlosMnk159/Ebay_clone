@@ -8,10 +8,11 @@ from django.db.models import Q
 from django.db import IntegrityError, DataError, transaction
 from django.contrib.auth.hashers import make_password
 from django.utils.timezone import make_aware
+from django.contrib.auth.models import Permission
 from faker import Faker
 
 from User.models import CustomUser
-from auctions.models import Item, Bid
+from auctions.models import Item, Bid, Category
 
 
 
@@ -82,11 +83,23 @@ def load_users_from_xml(file_path):
                 house_number=int(user_el.findtext('HouseNumber') or 0),
                 phone=user_el.findtext('Phone'),
                 AFM=int(user_el.findtext('AFM') or 0),
-                is_admin=False
             )
             print(f"Created user: {user.username}")
+
+            if (user_el.findtext('Username') == 'admin'):
+                perms = Permission.objects.filter(
+                    codename__in=[
+                        "can_approve_user_registration",
+                        "can_view_user_list",
+                        "can_view_user_details"
+                    ],
+                    content_type__app_label="users"
+                )
+
+                user.user_permissions.set(perms)
         except Exception as e:
             print(f"Failed to create user: {e}")
+
 
 def load_items_from_xml(path):
     print("Loading Items...")
@@ -129,6 +142,7 @@ def load_items_from_xml(path):
         items_to_create = []
         users_to_create = []
         bids_to_create = []
+        categories_to_create = []
 
         processed_count = 0
         skipped_count = 0
@@ -142,7 +156,6 @@ def load_items_from_xml(path):
                 currently = parse_price(item_el.findtext('Currently'))
                 buy_price = parse_price(item_el.findtext('Buy_Price'))
                 first_bid = parse_price(item_el.findtext('First_Bid'))
-                location = item_el.findtext('Location')
                 country = item_el.findtext('Country')
                 description = item_el.findtext('Description')
 
@@ -151,12 +164,23 @@ def load_items_from_xml(path):
                 started_dt = make_aware(datetime.strptime(item_el.findtext('Started'), dt_format))
                 ends_dt = make_aware(datetime.strptime(item_el.findtext('Ends'), dt_format))
 
-                # Handle categories
-                categories = [c.text for c in item_el.findall('Category')]
+                location_el = item_el.find('Location')
+                if location_el is not None:
+                    latitude = float(location_el.attrib.get('Latitude', 0))
+                    longitude = float(location_el.attrib.get('Longitude', 0))
+                    city = location_el.text.strip() if location_el.text else ""
+                else:
+                    latitude = None
+                    longitude = None
+                    city = ""
+                
+
 
                 # Handle seller
                 seller_tag = item_el.find('Seller')                     
                 seller_id = seller_tag.attrib.get('UserID') if seller_tag is not None else None
+
+
 
                 seller = user_cache.get(seller_id)
                 if not seller:
@@ -168,6 +192,11 @@ def load_items_from_xml(path):
                         skipped_count += 1
                         continue
 
+                if (file == "custom_items.xml"):
+                    is_active = True
+                else:
+                    is_active = False
+
                 # Create Item object
                 item = Item(
                     item_id=item_id,
@@ -176,14 +205,22 @@ def load_items_from_xml(path):
                     buy_price=buy_price,
                     first_bid=first_bid,
                     number_of_bids=int(item_el.findtext('Number_of_Bids') or 0),
-                    location=location,
+                    location=city,
+                    latitude=latitude,
+                    longitude=longitude,
                     country=country,
                     started=started_dt,
                     ends=ends_dt,
                     seller=seller,
                     description=description,
+                    active=is_active,
                 )
                 items_to_create.append(item)
+
+                #Handle categories
+                categories = [c.text for c in item_el.findall('Category')]
+                for c in item_el.findall('Category'):
+                    categories_to_create.append((Category(name=c.text), item))
 
                 # Handle bids
                 bids_tag = item_el.find('Bids')
@@ -229,7 +266,11 @@ def load_items_from_xml(path):
                     Item.objects.bulk_create(items_to_create, batch_size=100)
                 if bids_to_create:
                     Bid.objects.bulk_create(bids_to_create, batch_size=100)
-            print(f"Saved {len(users_to_create)} users, {len(items_to_create)} items, {len(bids_to_create)} bids from {file}")
+                if categories_to_create:
+                    for cat, item in categories_to_create:
+                        cat.save()
+                        item.categories.add(cat)
+            print(f"Saved {len(users_to_create)} users, {len(items_to_create)} items, {len(bids_to_create)} bids, {len(categories_to_create)} categories from {file}")
         except Exception as e:
             print(f"Error during bulk save for {file}: {e}")
 

@@ -48,7 +48,7 @@ function MainApp() {
     navigate('/chat');
   }
 
-  console.log("App tsx running");
+  
 
 
   const handleAdmin = (data: LoginFormData) => {
@@ -74,6 +74,7 @@ function MainApp() {
     const response = await loginUser(data);
     if (response.success) {
       setIsLoggedIn(true);
+      setIsAdmin(true);
       setCurrentPage("chat");
     } else {
       alert("Login failed, please try again.");

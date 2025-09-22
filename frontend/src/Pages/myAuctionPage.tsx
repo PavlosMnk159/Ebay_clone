@@ -1,4 +1,5 @@
-import { useState } from "react";
+import fetch_with_auth from "@/Authentication/axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 
@@ -27,8 +28,9 @@ interface Product {
     First_Bid:number;
     Number_of_Bids: number;
     Bids: Bid[] | null;
-    started: number;
-    ends: number;
+    started: string;
+    ends: string;
+    time_left: string;
     seller: {
         sellerId: string,
         rating: string
@@ -135,7 +137,7 @@ function ItemModal({ product, isOpen, onClose } : ItemModalProps) {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Time left:</span>
-                                        <span className="font-medium">{product.ends - product.started}</span>
+                                        <span className="font-medium">{product.time_left}</span>
                                     </div>
 
                                 </div>
@@ -413,6 +415,22 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
     const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+    const [products, setProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        const fetch_products = async () => {
+            try {
+                const res = await fetch_with_auth.get('/my_items/');
+                const data = res.data
+                setProducts(data);
+            } catch (error) {
+                console.log("Error while fetching products: ", error);
+            }
+        }
+
+        fetch_products();
+    }, []);
+
     const nav = useNavigate();
 
     const navigateEbay = () => {
@@ -485,83 +503,83 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
         setSelectedProduct(null);
     };
 
-   
+    // const products_real = await fetch_get('/items');
+    // console.log(products1);
+    // const products = [
+    //     {
+    //     id: 1,
+    //     name: "The Great Gatsby - Classic Literature",
+    //     category: "Books",
+    //     currently: 12,
+    //     Buy_Price: 15,
+    //     First_Bid: 10,
+    //     Number_of_Bids: 3,
+    //     Bids: null,
+    //     started: 19092025,
+    //     ends: 20092025,
+    //     seller: {
+    //         sellerId: "BookStore123",
+    //         rating: "98.5%",
+    //     },
+    //     description: "A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.",
+    //     image: "📚",
+    //     location: {
+    //         lat: 40.7128,
+    //         lng: -74.0060,
+    //     },
+    //     city: "New York, NY",
+    //     isActive: 1
+    //     },  {
+    //     id: 2,
+    //     name: "Active",
+    //     category: "Books",
+    //     currently: 10,
+    //     Buy_Price: 15,
+    //     First_Bid: 10,
+    //     Number_of_Bids: 0,
+    //     Bids: null,
+    //     started: 19092025,
+    //     ends: 20092025,
+    //     seller: {
+    //         sellerId: "BookStore123",
+    //         rating: "98.5%",
+    //     },
+    //     description: "Something something",
+    //     image: "📚",
+    //     location: {
+    //         lat: 40.7128,
+    //         lng: -74.0060,
+    //     },
+    //     city: "New York, NY",
+    //     isActive: 1
 
-  const products = [
-    {
-    id: 1,
-    name: "The Great Gatsby - Classic Literature",
-    category: "Books",
-    currently: 12,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 3,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 1
-    },  {
-    id: 2,
-    name: "Active",
-    category: "Books",
-    currently: 10,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 0,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 1
+    //     }, {
+    //     id: 3,
+    //     name: "Not Active",
+    //     category: "Books",
+    //     currently: 10,
+    //     Buy_Price: 15,
+    //     First_Bid: 10,
+    //     Number_of_Bids: 0,
+    //     Bids: null,
+    //     started: 19092025,
+    //     ends: 20092025,
+    //     seller: {
+    //         sellerId: "BookStore123",
+    //         rating: "98.5%",
+    //     },
+    //     description: "Something something",
+    //     image: "📚",
+    //     location: {
+    //         lat: 40.7128,
+    //         lng: -74.0060,
+    //     },
+    //     city: "New York, NY",
+    //     isActive: 0
 
-    }, {
-    id: 3,
-    name: "Not Active",
-    category: "Books",
-    currently: 10,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 0,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 0
-
-    }
-    
-  ];
+    //     }
+        
+    // ];
 
 
     return (
@@ -679,7 +697,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
                                 </div>
 
                                 <div className="text-sm text-gray-600 mb-3">
-                                    Time left: {product.ends - product.started}
+                                    Time left: {product.time_left}
                                 </div>
 
                                 <button
