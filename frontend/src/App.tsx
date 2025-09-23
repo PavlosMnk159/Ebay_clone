@@ -24,8 +24,8 @@ import { RequestPage } from './Pages/RequestsPage.tsx';
 
 import { BadeBayPage } from './Pages/eBayPageGuest.tsx';
 // import { ChatPage } from './Pages/CustomChatPage.tsx';
-import { ChatPage } from './Pages/ChatPage.tsx';
-
+import { ChatOutPage } from './Pages/ChatOutPage.tsx';
+import { ChatInPage } from "./Pages/ChatInPage.tsx";
 
 function MainApp() {
   const [currentPage, setCurrentPage] = useState("login");
@@ -45,7 +45,7 @@ function MainApp() {
   }
 
   const navigateToChat = () => {
-    navigate('/chat');
+    navigate('/chatIn');
   }
 
   
@@ -74,8 +74,7 @@ function MainApp() {
     const response = await loginUser(data);
     if (response.success) {
       setIsLoggedIn(true);
-      setIsAdmin(true);
-      setCurrentPage("chat");
+      // setIsAdmin(true);
     } else {
       alert("Login failed, please try again.");
     }
@@ -126,6 +125,8 @@ function MainApp() {
 
   return (
     <Routes>
+
+    <Route path='/' element={<Navigate to='/login' replace />} />
 
       {/*login*/}
       <Route path='/login' element={
@@ -262,10 +263,22 @@ function MainApp() {
         )
       } />
 
-      {/*chat*/}
-      <Route path='/chat' element={
+      {/*Inchat*/}
+      <Route path='/chatIn' element={
         isLoggedIn ? (
-          <ChatPage onLogout={() => {
+          <ChatInPage onLogout={() => {
+            setIsLoggedIn(false);
+            navigate('/login');
+          }} />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*Outchat*/}
+      <Route path='/chatOut' element={
+        isLoggedIn ? (
+          <ChatOutPage onLogout={() => {
             setIsLoggedIn(false);
             navigate('/login');
           }} />

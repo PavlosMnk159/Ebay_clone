@@ -438,7 +438,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
     };
 
     const navigateChat = () => {
-        nav('/chat')
+        nav('/chatIn')
     };
 
     const navigateMakeAuction = () => {

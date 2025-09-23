@@ -148,7 +148,7 @@ export function BidPage({ onLogout } : { onLogout: () => void;}){
     };
 
     const navigateChat = () => {
-        nav('/chat')
+        nav('/chatIn')
     };
     
     const navigateEbay = () => {

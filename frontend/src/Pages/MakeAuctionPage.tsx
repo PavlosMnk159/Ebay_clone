@@ -13,7 +13,7 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
   
   
     const navigateChat= ()=>{
-      nav('/chat')
+      nav('/chatIn')
     }
 
     const navigateMyAuctions= ()=>{
