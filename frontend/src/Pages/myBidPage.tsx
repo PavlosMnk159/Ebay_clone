@@ -298,6 +298,12 @@ const products = [
                                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
+                                {/* backend. fetch minimata
+                                 {users.length > 0 && ( 
+                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {/* {users.length}
+                                </span> 
+                                // )} */}
                             </button>
 
                             {/* Sell Button */}
