@@ -1,0 +1,49 @@
+<Items>
+    <Item ItemID="1">
+    <Name>The Great Gatsby - Classic Literature</Name>
+    <Category>Books</Category>
+    <Currently>$12.00</Currently>
+    <Buy_Price>$15.00</Buy_Price>
+    <First_Bid>$10.00</First_Bid>
+    <Number_of_Bids>3</Number_of_Bids>
+    <Bids />
+    <Location Latitude="40.7128" Longitude="-74.0060">New York, NY</Location>
+    <Country>USA</Country>
+    <Started>Sep-19-25 00:00:00</Started>
+    <Ends>Sep-25-25 00:00:00</Ends>
+    <Seller Rating="98.5%" UserID="BookStore123" />
+    <Description>A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.</Description>
+    </Item>
+
+    <Item ItemID="2">
+    <Name>Active</Name>
+    <Category>Books</Category>
+    <Currently>$10.00</Currently>
+    <Buy_Price>$15.00</Buy_Price>
+    <First_Bid>$10.00</First_Bid>
+    <Number_of_Bids>0</Number_of_Bids>
+    <Bids />
+    <Location Latitude="40.7128" Longitude="-74.0060">New York, NY</Location>
+    <Country>USA</Country>
+    <Started>Sep-19-25 00:00:00</Started>
+    <Ends>Sep-25-25 00:00:00</Ends>
+    <Seller Rating="98.5%" UserID="BookStore123" />
+    <Description>Something something</Description>
+    </Item>
+
+    <Item ItemID="3">
+    <Name>Not Active</Name>
+    <Category>Books</Category>
+    <Currently>$10.00</Currently>
+    <Buy_Price>$15.00</Buy_Price>
+    <First_Bid>$10.00</First_Bid>
+    <Number_of_Bids>0</Number_of_Bids>
+    <Bids />
+    <Location Latitude="40.7128" Longitude="-74.0060">New York, NY</Location>
+    <Country>USA</Country>
+    <Started>Sep-19-25 00:00:00</Started>
+    <Ends>Sep-25-25 00:00:00</Ends>
+    <Seller Rating="98.5%" UserID="BookStore123" />
+    <Description>Something something</Description>
+    </Item>
+</Items>

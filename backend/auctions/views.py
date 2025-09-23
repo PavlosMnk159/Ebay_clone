@@ -10,8 +10,10 @@ from django.db.models import Q
 
 from decimal import Decimal
 
-from .models import Item, Category
+from .models import Item, Category, Visit, Bid
 from .serializers import ItemSerializer, BidSerializer, AuctionCreation
+from .recomendation_utils import recommend_items
+
 
 class CategoryList(APIView):
     """
@@ -49,9 +51,23 @@ class ItemList(APIView):
         if (query):
             available_items = available_items.filter(Q(name__icontains=query) | Q(description__icontains=query))
         
+        available_items = list(available_items)
+
+        if (request.user.is_authenticated):
+            bids_from_user = list(Bid.objects.filter(bidder=request.user).values_list('item_id', flat=True))
+            if bids_from_user:
+                return recommend_items(request, Bid, available_items)
+            else:
+                vistis_from_users = list(Visit.objects.filter(visitor=request.user).values_list('item_id', flat=True))
+                if vistis_from_users:
+                    return recommend_items(request, Visit, available_items)
+                else:            
+                    serializer = ItemSerializer(available_items, many=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
         serializer = ItemSerializer(available_items, many=True)
-
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class MyItemList(APIView):
@@ -76,20 +92,14 @@ class ItemDetail(APIView):
     def get(self, request, item_id):
         item = get_object_or_404(Item, item_id=item_id)
         serializer = ItemSerializer(item)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-class PlaceBid(APIView):
-    """
-    View to place a bid on a specific item
-    """
-    
 
-    def post(self, request):
-        serialiser = BidSerializer(data=request.data)
-        if (serialiser.is_valid()):
-            serialiser.save()
-            return Response({"detail": "Bid placed successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
+        if (request.user.is_authenticated):
+            visit, created = Visit.objects.get_or_create(item=item, visitor=request.user)
+            if (not created):
+                visit.count += 1
+                visit.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 class CreateAuctionItem(APIView):
     authentication_classes = [JWTAuthentication]
@@ -105,6 +115,19 @@ class CreateAuctionItem(APIView):
             serialiser.save()
             return Response({"detail": "Item created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class PlaceBid(APIView):
+    """
+    View to place a bid on a specific item
+    """
+    
+    def post(self, request):
+        serialiser = BidSerializer(data=request.data)
+        if (serialiser.is_valid()):
+            serialiser.save()
+            return Response({"detail": "Bid placed successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     
 
 class BuyOut(APIView):

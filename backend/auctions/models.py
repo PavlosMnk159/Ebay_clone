@@ -43,3 +43,11 @@ class Bid(models.Model):
 
     def __str__(self):
         return f"${self.amount} by {self.bidder.username} on {self.item.name}"
+    
+class Visit(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='visits')
+    visitor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='items_visited')
+    count = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"${self.visitor} has visited ${self.item}"

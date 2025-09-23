@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Item, Bid
+from .models import Category, Item, Bid, Visit
 from User.models import CustomUser
 from django.utils import timezone
 
@@ -17,6 +17,11 @@ class BidSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get('request')
         return Bid.objects.create(bidder=request.user, **validated_data)
+    
+class VisitSerialzer(serializers.ModelSerializer):
+    class Meta:
+        model = Visit
+        fields = ['item', 'visitor', 'count']
 
 # this allows us to use the category names as fields
 class CategoryNameField(serializers.SlugRelatedField):
