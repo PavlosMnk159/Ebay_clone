@@ -421,7 +421,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
         const fetch_products = async () => {
             try {
                 const res = await fetch_with_auth.get('/my_items/');
-                const data = res.data
+                const data = res.data;
                 setProducts(data);
             } catch (error) {
                 console.log("Error while fetching products: ", error);

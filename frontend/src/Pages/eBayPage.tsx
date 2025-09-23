@@ -2,6 +2,7 @@ import fetch_with_auth from "@/Authentication/axios";
 import { fetch_get } from "@/config/url";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
+
 declare global {
   interface Window {
     L: any;
@@ -118,24 +119,42 @@ interface BidOfferModalProps {
     amount: string;
     isOpen: boolean;
     onClose: () => void;
+    onDataChange?: () => Promise<void>; // Add this
 }
 
-function BidExtraModal({ product, amount, isOpen, onClose}: BidOfferModalProps) {
+function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOfferModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen || !product) return null;
 
-  
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
         try {
-            // Handle Buy It Now logic
-            console.log('Processing purchase for:', product.name);
-            // API call: await purchaseItem(product.id);
-            alert('Purchase initiated! You will be redirected to payment. bought here');
-        
+            // Handle offer submission logic
+            console.log('Processing offer for:', product.name);
+            
+            // API call for making offer
+            const request_data = {
+                item_id: product.id,
+                amount: amount
+            };
+            
+            try {
+                const res = await fetch_with_auth.post('make-offer', request_data);
+                console.log(res.data);
+                alert('Offer submitted successfully!');
+                
+                // Refresh data after successful operation
+                if (onDataChange) {
+                    await onDataChange();
+                }
+            } catch (e: any) {
+                console.log("Could not submit offer", e.message);
+                alert('Failed to submit offer. Please try again.');
+            }
+            
             onClose();
         } finally {
             setIsSubmitting(false);
@@ -360,33 +379,21 @@ interface PurchaseModalProps {
     product: Product | null;
     isOpen: boolean;
     onClose: () => void;
-    mode: 'buy' | 'offer'; // Determines if it's Buy Now or Make Offer
+    mode: 'buy' | 'offer';
+    onDataChange?: () => Promise<void>; // Add this
 }
 
-function PurchaseModal({ product, isOpen, onClose, mode }: PurchaseModalProps) {
+function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: PurchaseModalProps) {
     const [offerAmount, setOfferAmount] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
-
     const [isOffer, setIsOffer] = useState(false);
     
     if (!isOpen || !product) return null;
 
-
-    // const openMessageModal = () => {
-    //     setIsMessageModalOpen(true);
-    // };
-
-    const closeExtraBinModal = () => {
+    const closeExtraBidModal = () => {
         setIsOffer(false);
+        onClose();
     };
-
-    // const handleSendMessage = async (message: string) => {
-    // // Your message sending logic here
-    // console.log('Sending message:', message);
-    // // API call to send message would go here
-    // // await sendMessageAPI(product.seller.id, message, product.id);
-    // };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -395,33 +402,36 @@ function PurchaseModal({ product, isOpen, onClose, mode }: PurchaseModalProps) {
         try {
             if (mode === 'buy') {
                 // Handle Buy It Now logic
-                // openMessageModal();
-
                 console.log('Processing purchase for:', product.name);
-                // API call: await purchaseItem(product.id);
+                
                 const request_data = {
-                    item_id:product.id,
+                    item_id: product.id,
                 };
+                
                 try {
                     const res = await fetch_with_auth.post('buy', request_data);
                     console.log(res.data);
-
+                    alert('Purchase initiated! You will be redirected to payment.');
+                    
+                    // Refresh data after successful purchase
+                    if (onDataChange) {
+                        await onDataChange();
+                    }
                 } catch (e: any) {
                     console.log("Could not buy that item", e.message);
+                    alert('Purchase failed. Please try again.');
                 }
-
-                alert('Purchase initiated! You will be redirected to payment. bought here');
-                // const data = await fetch_get('/items/');
-                // setProducts(data);
             } else {
-                setIsOffer(true);
                 // Handle Make Offer logic
+                setIsOffer(true);
+
                 console.log('Making offer:', offerAmount, 'for:', product.name);
-                // API call: await makeOffer(product.id, offerAmount);
-                alert(`Offer of ${offerAmount} sent to seller! bid here`);
+                // Note: The actual API call will happen in BidExtraModal
             }
             
-            onClose();
+            if (mode === 'buy') {
+                onClose();
+            }
         } catch (error) {
             console.error('Error:', error);
             alert('Something went wrong. Please try again.');
@@ -515,7 +525,8 @@ function PurchaseModal({ product, isOpen, onClose, mode }: PurchaseModalProps) {
                 product={product}
                 amount={offerAmount}
                 isOpen={isOffer}
-                onClose={closeExtraBinModal}
+                onClose={closeExtraBidModal}
+                onDataChange={onDataChange} // Pass it down
             />
 
         </div>
@@ -529,16 +540,14 @@ interface ItemModalProps {
     product: Product | null;
     isOpen: boolean;
     onClose: () => void;
+    onDataChange?: () => Promise<void>; // Add this
 }
 
-
-function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
+function ItemModal({ product, isOpen, onClose, onDataChange }: ItemModalProps) {
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
     
-    
     if (!isOpen || !product) return null;
-
 
     const openPurchaseModal = (mode: 'buy' | 'offer') => {
         setPurchaseMode(mode);
@@ -547,6 +556,7 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
     
     const closePurchaseModal = () => {
         setIsPurchaseModalOpen(false);
+        onClose();
     };
 
     return (
@@ -669,7 +679,9 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
                 isOpen={isPurchaseModalOpen}
                 onClose={closePurchaseModal}
                 mode={purchaseMode}
+                onDataChange={onDataChange} // Pass it down
             />
+
         </>
     );
 }
@@ -677,6 +689,8 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
 
 
 export function EBayPage({ onLogout } : { onLogout: () => void;}){
+
+
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -690,17 +704,28 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
 
 
 
-    const openPurchaseModal = (product : Product, mode: 'buy' | 'offer') => {
-        setPurchaseProduct(product)
+    const openPurchaseModal = (product: Product, mode: 'buy' | 'offer') => {
+        setPurchaseProduct(product);
         setPurchaseMode(mode);
         setIsPurchaseModalOpen(true);
     };
     
     const closePurchaseModal = () => {
         setIsPurchaseModalOpen(false);
+        setIsModalOpen(false);
         setPurchaseProduct(null);
+        refreshData();
+
     };
 
+    const refreshData = async () => {
+        try {
+            const data = await fetch_get('/items/');
+            setProducts(data);
+        } catch (error) {
+            console.log("Error while refreshing data: ", error);
+        }
+    };
 
     useEffect(() => {
         const fetch_products = async () => {
@@ -729,8 +754,10 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
     const nav = useNavigate();
 
     const navigateMyAuction = () => {
-        nav('/myAuction')
+        nav('/myAuction');
     };
+
+ 
 
     const navigateChat = () => {
         nav('/chatIn')
@@ -761,7 +788,7 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
     };
 
     const handleProductClick = (product: Product) => {
-        if(purchaseProduct != product){
+        if (purchaseProduct != product) {
             setSelectedProduct(product);
             setIsModalOpen(true);
         }
@@ -770,6 +797,7 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedProduct(null);
+        refreshData();
     };
 
 
@@ -968,14 +996,10 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                                     <button
                                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm"
                                         onClick={async (e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        openPurchaseModal(product, 'buy');
-
-                                        // refresh items
-                                        const data = await fetch_get('/items/');
-                                        setProducts(data);
-                                    }}
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            openPurchaseModal(product, 'buy');
+                                        }}
                                     >
                                         Buy It Now
                                     </button>
@@ -986,19 +1010,21 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                 </div>
             </div>
 
-            {/* Modal */}
+            {/* Modal with refresh callback */}
             <ItemModal
                 product={selectedProduct}
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
+                onDataChange={refreshData} // Pass the refresh function
             />
 
-            {/* Purchase Modal */}
+            {/* Purchase Modal with refresh callback */}
             <PurchaseModal
                 product={purchaseProduct}
                 isOpen={isPurchaseModalOpen}
                 onClose={closePurchaseModal}
                 mode={purchaseMode}
+                onDataChange={refreshData} // Pass the refresh function
             />
 
         </div>
