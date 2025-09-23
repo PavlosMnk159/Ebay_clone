@@ -112,6 +112,146 @@ function SimpleMap({ lat = 40.7128, lng = -74.0060 }) {
 }
 
 
+// interface BidOfferModalProps {
+//     product: Product | null;
+//     isOpen: boolean;
+//     onClose: () => void;
+// }
+
+// function BidExtraModal({ product, isOpen, onClose}: BidOfferModalProps) {
+//     const [offerAmount, setOfferAmount] = useState('');
+//     const [isSubmitting, setIsSubmitting] = useState(false);
+//     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+
+//     if (!isOpen || !product) return null;
+
+
+//     const openMessageModal = () => {
+//         setIsMessageModalOpen(true);
+//     };
+
+//     const handleSendMessage = async (message: string) => {
+//     // Your message sending logic here
+//     console.log('Sending message:', message);
+//     // API call to send message would go here
+//     // await sendMessageAPI(product.seller.id, message, product.id);
+//     };
+
+//     const handleSubmit = async (e: React.FormEvent) => {
+//         e.preventDefault();
+//         setIsSubmitting(true);
+
+//         try {
+//             // Handle Buy It Now logic
+//             openMessageModal();
+
+//             console.log('Processing purchase for:', product.name);
+//             // API call: await purchaseItem(product.id);
+//             alert('Purchase initiated! You will be redirected to payment. bought here');
+        
+//             onClose();
+//         } finally {
+//             setIsSubmitting(false);
+//         }
+//     };
+
+//     const modalTitle = 'Confirm Purchase';
+//     const buttonText = 'Confirm Purchase';
+//     const buttonColor = 'bg-blue-600 hover:bg-blue-700';
+
+//     return (
+//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+//             <div className="bg-white rounded-lg max-w-md w-full mx-4" 
+//             onClick={(e) => e.stopPropagation()}>
+//                 <div className="p-6">
+//                     {/* Header */}
+//                     <div className="flex justify-between items-center mb-4">
+//                         <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
+//                         <button
+//                             onClick={onClose}
+//                             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+//                         >
+//                             ×
+//                         </button>
+//                     </div>
+
+//                     {/* Product Info */}
+//                     <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
+//                         <div className="text-3xl mr-3">{product.image}</div>
+//                         <div className="flex-1">
+//                             <h4 className="font-medium text-gray-800 text-sm">{product.name}</h4>
+//                             <p className="text-sm text-gray-600">Seller: {product.seller.sellerId}</p>
+//                             <p className="text-lg font-bold text-green-600">{product.Buy_Price}</p>
+//                         </div>
+//                     </div>
+
+//                     {/* Form */}
+//                     <form onSubmit={handleSubmit}>
+//                         {(
+//                             <div className="mb-4">
+//                                 <label className="block text-sm font-medium text-gray-700 mb-2">
+//                                     Your Offer Amount
+//                                 </label>
+//                                 <input
+//                                     type="text"
+//                                     value={offerAmount}
+//                                     onChange={(e) => setOfferAmount(e.target.value)}
+//                                     placeholder="Enter your offer (e.g., $50)"
+//                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+//                                     required
+//                                 />
+//                                 <p className="text-xs text-gray-500 mt-1">
+//                                     The seller can accept or decline your offer
+//                                 </p>
+//                             </div>
+//                         )}
+
+    
+
+//                         {/* Action Buttons */}
+//                         <div className="flex space-x-3">
+//                             <button
+//                                 type="button"
+//                                 onClick={onClose}
+//                                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+//                             >
+//                                 Cancel
+//                             </button>
+//                             <button
+//                                 type="submit"
+//                                 disabled={isSubmitting}
+//                                 className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
+//                             >
+//                                 {isSubmitting ? 'Processing...' : buttonText}
+//                             </button>
+//                         </div>
+//                     </form>
+//                 </div>
+//             </div>
+//             {/* Message Modal - opens when Message button is clicked */}
+//             <MessageModal
+//                 recipient={{
+//                     sellerID: product.seller.sellerId,
+//                     rating: product.seller.rating,
+//                     product: {
+//                         itemID: product.id,
+//                         image: product.image,
+//                         name: product.name,
+//                         Buy_Price: product.Buy_Price
+//                     }
+//                 }}
+//                 isOpen={isMessageModalOpen}
+//                 onClose={() => setIsMessageModalOpen(false)}
+//                 onSendMessage={handleSendMessage}
+//             />
+
+//         </div>
+
+        
+//     );
+// }
+
+
 interface MessageModalProps {
     recipient: {
         sellerID: string;
