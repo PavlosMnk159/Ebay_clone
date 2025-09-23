@@ -149,7 +149,7 @@ class BuyOut(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        item = get_object_or_404(Item, id=item_id)
+        item = get_object_or_404(Item, item_id=item_id)
         
         if not item:
             return Response(
@@ -165,6 +165,7 @@ class BuyOut(APIView):
         
         item.buyer = user
         item.active = False
+        item.save()
 
         conversation_data = {
             "seller": item.seller.id,
@@ -174,7 +175,7 @@ class BuyOut(APIView):
         # Create conversation with user
         conversation = ConversationSerializer(data = conversation_data)
         if conversation.is_valid():
-            conversation.save()
+            conversation_instance = conversation.save()
         else:
             return Response(
                 {"error": "Failed to create conversation", "details": conversation.errors},
@@ -183,7 +184,7 @@ class BuyOut(APIView):
 
         #add an initial message to the conversation
         message_data = {
-            "conversation": conversation.id,
+            "conversation": conversation_instance.id,
             "message": f"Hi, I am {user.first_name} and i have just purchased {item.name}",
         }
 
@@ -199,7 +200,7 @@ class BuyOut(APIView):
         return Response(
             {
                 "message": "Item successfully purchased.",
-                "item_id": item.id,
+                "item_id": item.item_id,
                 "price": str(item.buy_price),
             },
             status=status.HTTP_201_CREATED
