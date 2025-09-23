@@ -2,30 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 
-import { loginUser } from "./Authentication/auth.ts";
-import { registerUser } from "./Authentication/auth.ts";
-
-import { LoginFormData, RegisterFormData } from "./types/auth_types";
-
-  
-import { LoginPage } from './Pages/LoginPage.tsx';
-import { RegisterPage } from './Pages/RegisterPage.tsx';
-// import { WaitingPage } from './Pages/WaitingPage.tsx';
-// import { SellPage } from './Pages/WaitingPage.tsx';
-
-import { EBayPage } from './Pages/eBayPage.tsx';
-import { MakeAuction } from './Pages/MakeAuctionPage.tsx';
-import { AuctionPage } from './Pages/myAuctionPage.tsx';
-import { ItemBidPage } from './Pages/ItemBidPage.tsx'
-import { BidPage } from './Pages/myBidPage.tsx'
-
-import { AdminPage } from './Pages/AdminPage.tsx';
-import { RequestPage } from './Pages/RequestsPage.tsx';
-
-import { BadeBayPage } from './Pages/eBayPageGuest.tsx';
-// import { ChatPage } from './Pages/CustomChatPage.tsx';
-import { ChatPage } from './Pages/ChatPage.tsx';
-
 
 function MainApp() {
   const [currentPage, setCurrentPage] = useState("login");
