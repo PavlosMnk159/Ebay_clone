@@ -424,6 +424,7 @@ function PurchaseModal({ product, isOpen, onClose, mode }: PurchaseModalProps) {
 
                 console.log('Processing purchase for:', product.name);
                 // API call: await purchaseItem(product.id);
+                // const res = await 
                 alert('Purchase initiated! You will be redirected to payment. bought here');
             } else {
                 // Handle Make Offer logic
