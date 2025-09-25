@@ -1,6 +1,8 @@
+import fetch_with_auth from "@/Authentication/axios";
 import { fetch_get } from "@/config/url";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
+
 declare global {
   interface Window {
     L: any;
@@ -112,164 +114,456 @@ function SimpleMap({ lat = 40.7128, lng = -74.0060 }) {
 }
 
 
-interface MessageModalProps {
-    recipient: {
-        sellerID: string;
-        rating: string;
-        product: {
-            itemID: number;
-            image: string;
-            name: string;
-            Buy_Price: number;
-        }
-    };
-
+interface BidOfferModalProps {
+    product: Product | null;
+    amount: string;
     isOpen: boolean;
     onClose: () => void;
-    onSendMessage: (message: string) => void;
+    onDataChange?: () => Promise<void>; // Add this
 }
 
-function MessageModal({ recipient, isOpen, onClose, onSendMessage }: MessageModalProps) {
-    const [message, setMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOfferModalProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    if (!isOpen || !recipient) return null;
+    if (!isOpen || !product) return null;
 
-    const handleSendMessage = async () => {
-        if (!message.trim()) return;
-        
-        setIsLoading(true);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
         try {
-            await onSendMessage(message);
-            setMessage('');
+            // Handle offer submission logic
+            console.log('Processing offer for:', product.name);
+            
+            // API call for making offer
+            const request_data = {
+                item_id: product.id,
+                amount: amount
+            };
+            
+            try {
+                const res = await fetch_with_auth.post('make-offer', request_data);
+                console.log(res.data);
+                alert('Offer submitted successfully!');
+                
+                // Refresh data after successful operation
+                if (onDataChange) {
+                    await onDataChange();
+                }
+            } catch (e: any) {
+                console.log("Could not submit offer", e.message);
+                alert('Failed to submit offer. Please try again.');
+            }
+            
             onClose();
-        } catch (error) {
-            console.error('Failed to send message:', error);
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-        }
-    };
+    const modalTitle = 'Confirm Offer';
+    const buttonText = 'Confirm Offer';
+    const buttonColor = 'bg-orange-500 hover:bg-orange-600';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-lg max-w-md w-full mx-4" 
+            onClick={(e) => e.stopPropagation()}>
                 <div className="p-6">
-                    {/* Header with close button */}
-                    <div className="flex justify-between items-start mb-4">
-                        <h2 className="text-2xl font-bold text-gray-800 pr-2">Send Message</h2>
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
                         <button
                             onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                         >
                             ×
                         </button>
                     </div>
 
-                    <div className="space-y-2">
-                        {/* Recipient Information */}
-                        <div className="bg-gray-50 p-2 rounded-lg">
-                            <h3 className="font-semibold text-gray-800 mb-2">Message To:</h3>
-                            <div className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <span className="text-blue-600 font-bold text-lg">
-                                        {recipient.sellerID.charAt(0).toUpperCase()}
-                                    </span>
-                                </div>
-                                <div>
-                                    <div className="font-medium text-gray-800">{recipient.sellerID}</div>
-                                </div>
-                            </div>
+                    {/* Product Info */}
+                    <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="text-3xl mr-3">{product.image}</div>
+                        <div className="flex-1">
+                            <h4 className="font-medium text-gray-800 text-sm">{product.name}</h4>
+                            <p className="text-sm text-gray-600">Seller: {product.seller.sellerId}</p>
+                            <p className="text-lg font-bold text-green-600">{product.Buy_Price}</p>
                         </div>
+                    </div>
 
-                        {/* Product Reference (if applicable) */}
-                        {recipient.product && (
-                            <div className="bg-blue-50 p-2 rounded-lg">
-                                <h3 className="font-semibold text-gray-800 mb-2">About Item:</h3>
-                                <div className="flex items-center space-x-3">
-                                    <div className="text-3xl">{recipient.product.image}</div>
-                                    <div>
-                                        <div className="font-medium text-gray-800">{recipient.product.name}</div>
-                                        <div className="text-sm text-gray-600">#{recipient.product.Buy_Price}</div>
-                                    </div>
-                                </div>
+                    {/* Form */}
+                    <form onSubmit={handleSubmit}>
+                        {(
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Your Offer Amount: {amount}
+                                </label>
+                                
+                                <p className="text-xs text-gray-500 mt-1 font-bold">
+                                    Please keep in mind, once confirmed you cannot change an offer
+                                </p>
+
+                                <p className="text-xs text-gray-500 mt-1">
+                                    The seller can accept or decline your offer
+                                </p>
                             </div>
                         )}
 
-                        {/* Message Input */}
-                        <div>
-                            <label htmlFor="message" className="block font-semibold text-gray-800 mb-2">
-                                Your Message:
-                            </label>
-                            <textarea
-                                id="message"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                onKeyPress={handleKeyPress}
-                                placeholder="Type your message here..."
-                                rows={6}
-                                className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-                                disabled={isLoading}
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                                Press Enter to send, Shift+Enter for new line
-                            </div>
-                        </div>
+    
 
                         {/* Action Buttons */}
                         <div className="flex space-x-3">
                             <button
-                                onClick={handleSendMessage}
-                                disabled={!message.trim() || isLoading}
-                                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-                            >
-                                {isLoading ? 'Sending...' : 'Send Message'}
-                            </button>
-                            <button
+                                type="button"
                                 onClick={onClose}
-                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                                disabled={isLoading}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                {isSubmitting ? 'Processing...' : buttonText}
+                            </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
+            
+
         </div>
+
+        
     );
 }
 
-interface ItemModalProps {
+
+// interface MessageModalProps {
+//     recipient: {
+//         sellerID: string;
+//         rating: string;
+//         product: {
+//             itemID: number;
+//             image: string;
+//             name: string;
+//             Buy_Price: number;
+//         }
+//     };
+
+//     isOpen: boolean;
+//     onClose: () => void;
+//     onSendMessage: (message: string) => void;
+// }
+
+// function MessageModal({ recipient, isOpen, onClose, onSendMessage }: MessageModalProps) {
+//     const [message, setMessage] = useState('');
+//     const [isLoading, setIsLoading] = useState(false);
+
+//     if (!isOpen || !recipient) return null;
+
+//     const handleSendMessage = async () => {
+//         if (!message.trim()) return;
+        
+//         setIsLoading(true);
+//         try {
+//             await onSendMessage(message);
+//             setMessage('');
+//             onClose();
+//         } catch (error) {
+//             console.error('Failed to send message:', error);
+//         } finally {
+//             setIsLoading(false);
+//         }
+//     };
+
+//     const handleKeyPress = (e: React.KeyboardEvent) => {
+//         if (e.key === 'Enter' && !e.shiftKey) {
+//             e.preventDefault();
+//             handleSendMessage();
+//         }
+//     };
+
+//     return (
+//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+//             <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+//                 <div className="p-6">
+//                     {/* Header with close button */}
+//                     <div className="flex justify-between items-start mb-4">
+//                         <h2 className="text-2xl font-bold text-gray-800 pr-2">Send Message</h2>
+//                         <button
+//                             onClick={onClose}
+//                             className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+//                         >
+//                             ×
+//                         </button>
+//                     </div>
+
+//                     <div className="space-y-2">
+//                         {/* Recipient Information */}
+//                         <div className="bg-gray-50 p-2 rounded-lg">
+//                             <h3 className="font-semibold text-gray-800 mb-2">Message To:</h3>
+//                             <div className="flex items-center space-x-3">
+//                                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+//                                     <span className="text-blue-600 font-bold text-lg">
+//                                         {recipient.sellerID.charAt(0).toUpperCase()}
+//                                     </span>
+//                                 </div>
+//                                 <div>
+//                                     <div className="font-medium text-gray-800">{recipient.sellerID}</div>
+//                                 </div>
+//                             </div>
+//                         </div>
+
+//                         {/* Product Reference (if applicable) */}
+//                         {recipient.product && (
+//                             <div className="bg-blue-50 p-2 rounded-lg">
+//                                 <h3 className="font-semibold text-gray-800 mb-2">About Item:</h3>
+//                                 <div className="flex items-center space-x-3">
+//                                     <div className="text-3xl">{recipient.product.image}</div>
+//                                     <div>
+//                                         <div className="font-medium text-gray-800">{recipient.product.name}</div>
+//                                         <div className="text-sm text-gray-600">#{recipient.product.Buy_Price}</div>
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         )}
+
+//                         {/* Message Input */}
+//                         <div>
+//                             <label htmlFor="message" className="block font-semibold text-gray-800 mb-2">
+//                                 Your Message:
+//                             </label>
+//                             <textarea
+//                                 id="message"
+//                                 value={message}
+//                                 onChange={(e) => setMessage(e.target.value)}
+//                                 onKeyPress={handleKeyPress}
+//                                 placeholder="Type your message here..."
+//                                 rows={6}
+//                                 className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+//                                 disabled={isLoading}
+//                             />
+//                             <div className="text-xs text-gray-500 mt-1">
+//                                 Press Enter to send, Shift+Enter for new line
+//                             </div>
+//                         </div>
+
+//                         {/* Action Buttons */}
+//                         <div className="flex space-x-3">
+//                             <button
+//                                 onClick={handleSendMessage}
+//                                 disabled={!message.trim() || isLoading}
+//                                 className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+//                             >
+//                                 {isLoading ? 'Sending...' : 'Send Message'}
+//                             </button>
+//                             <button
+//                                 onClick={onClose}
+//                                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+//                                 disabled={isLoading}
+//                             >
+//                                 Cancel
+//                             </button>
+//                         </div>
+//                     </div>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// }
+
+
+interface PurchaseModalProps {
     product: Product | null;
     isOpen: boolean;
     onClose: () => void;
+    mode: 'buy' | 'offer';
+    onDataChange?: () => Promise<void>; // Add this
 }
 
-
-function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
-    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: PurchaseModalProps) {
+    const [offerAmount, setOfferAmount] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOffer, setIsOffer] = useState(false);
     
     if (!isOpen || !product) return null;
 
-    const handleSendMessage = async (message: string) => {
-        // Your message sending logic here
-        console.log('Sending message:', message);
-        // API call to send message would go here
-        // await sendMessageAPI(product.seller.id, message, product.id);
+    const closeExtraBidModal = () => {
+        setIsOffer(false);
+        onClose();
     };
 
-    const openMessageModal = () => {
-        setIsMessageModalOpen(true);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            if (mode === 'buy') {
+                // Handle Buy It Now logic
+                console.log('Processing purchase for:', product.name);
+                
+                const request_data = {
+                    item_id: product.id,
+                };
+                
+                try {
+                    const res = await fetch_with_auth.post('buy', request_data);
+                    console.log(res.data);
+                    alert('Purchase initiated! You will be redirected to payment.');
+                    
+                    // Refresh data after successful purchase
+                    if (onDataChange) {
+                        await onDataChange();
+                    }
+                } catch (e: any) {
+                    console.log("Could not buy that item", e.message);
+                    alert('Purchase failed. Please try again.');
+                }
+            } else {
+                // Handle Make Offer logic
+                setIsOffer(true);
+
+                console.log('Making offer:', offerAmount, 'for:', product.name);
+                // Note: The actual API call will happen in BidExtraModal
+            }
+            
+            if (mode === 'buy') {
+                onClose();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Something went wrong. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
+    const modalTitle = mode === 'buy' ? 'Confirm Purchase' : 'Make an Offer';
+    const buttonText = mode === 'buy' ? 'Confirm Purchase' : 'Send Offer';
+    const buttonColor = mode === 'buy' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-500 hover:bg-orange-600';
 
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
+            <div className="bg-white rounded-lg max-w-md w-full mx-4" 
+            onClick={(e) => e.stopPropagation()}>
+                <div className="p-6">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="text-3xl mr-3">{product.image}</div>
+                        <div className="flex-1">
+                            <h4 className="font-medium text-gray-800 text-sm">{product.name}</h4>
+                            <p className="text-sm text-gray-600">Seller: {product.seller.sellerId}</p>
+                            <p className="text-lg font-bold text-green-600">{product.Buy_Price}</p>
+                        </div>
+                    </div>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit}>
+                        {mode === 'offer' && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Your Offer Amount
+                                </label>
+                                <input
+                                    type="text"
+                                    value={offerAmount}
+                                    onChange={(e) => setOfferAmount(e.target.value)}
+                                    placeholder="Enter your offer (e.g., $50)"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    The seller can accept or decline your offer
+                                </p>
+                            </div>
+                        )}
+
+                        {mode === 'buy' && (
+                            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    You are about to purchase this item for <strong>{product.Buy_Price}</strong>. 
+                                    You will be redirected to complete payment.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-3">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || (mode === 'offer' && !offerAmount.trim())}
+                                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                {isSubmitting ? 'Processing...' : buttonText}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {/* Offer confirmation */}
+            <BidExtraModal
+                product={product}
+                amount={offerAmount}
+                isOpen={isOffer}
+                onClose={closeExtraBidModal}
+                onDataChange={onDataChange} // Pass it down
+            />
+
+        </div>
+
+        
+    );
+}
+
+
+interface ItemModalProps {
+    isAdmin: boolean;
+    product: Product | null;
+    isOpen: boolean;
+    onClose: () => void;
+    onDataChange?: () => Promise<void>; // Add this
+}
+
+function ItemModal({ isAdmin, product, isOpen, onClose, onDataChange }: ItemModalProps) {
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
+    
+    if (!isOpen || !product) return null;
+
+    const openPurchaseModal = (mode: 'buy' | 'offer') => {
+        setPurchaseMode(mode);
+        setIsPurchaseModalOpen(true);
+    };
+    
+    const closePurchaseModal = () => {
+        setIsPurchaseModalOpen(false);
+        onClose();
+    };
+
+    const handleExtract = () => {
+        //backendπου  
+        //extract to "product" που δινεται στο Item modal
+    };
 
     return (
         <>
@@ -295,7 +589,8 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <div className="text-3xl font-bold text-green-600">{product.Buy_Price}</div>
+                                    <div className="text-2xl font-bold text-green-600">Buy It Now for:{product.Buy_Price}</div>
+                                    <div className="text-2xl font-bold text-green-600">Current best bid: {product.currently}</div>
                                     <div className="text-sm text-gray-600">Seller: <span className="font-medium text-blue-600">{product.seller.sellerId}</span>
                                         <span className="text-green-600 ml-2">({product.seller.rating} positive)</span>
                                     </div>
@@ -338,13 +633,6 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
                                             <span className="text-gray-600">Category:</span>
                                             <span className="font-medium">Books & Magazines</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Format:</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Shipping:</span>
-                                            <span className="font-medium text-green-600">Free shipping</span>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -360,57 +648,102 @@ function ItemModal({ product, isOpen, onClose }: ItemModalProps) {
 
                                 {/* Action buttons */}
                                 <div className="space-y-3">
-                                    <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                    <button 
+                                        onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openPurchaseModal('buy');
+                                        
+                                    }}
+                                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                    >
                                         Buy It Now
                                     </button>
+                                    
                                     <button 
-                                        onClick={openMessageModal}
-                                        className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                                        onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openPurchaseModal('offer');
+                                    }}
+                                        className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 transition-colors font-medium"
                                     >
-                                        Message Seller
-                                    </button>
-                                    <button className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 transition-colors font-medium">
                                         Make Offer
                                     </button>
+
+                                    {isAdmin && (<button 
+                                        onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleExtract();
+                                    }}
+                                        className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                                    >
+                                        Extract Auction
+                                    </button>)}
+
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            
 
-            {/* Message Modal - opens when Message button is clicked */}
-            <MessageModal
-                recipient={{
-                    sellerID: product.seller.sellerId,
-                    rating: product.seller.rating,
-                    product: {
-                        itemID: product.id,
-                        image: product.image,
-                        name: product.name,
-                        Buy_Price: product.Buy_Price
-                    }
-                }}
-                isOpen={isMessageModalOpen}
-                onClose={() => setIsMessageModalOpen(false)}
-                onSendMessage={handleSendMessage}
+
+            {/* Purchase Modal */}
+            <PurchaseModal
+                product={product}
+                isOpen={isPurchaseModalOpen}
+                onClose={closePurchaseModal}
+                mode={purchaseMode}
+                onDataChange={onDataChange} // Pass it down
             />
+
         </>
     );
 }
 
 
 
-export function EBayPage({ onLogout } : { onLogout: () => void;}){
-    const [selectedFormat, setSelectedFormat] = useState("all");
+export function EBayPage({isAdmin, onLogout } : {isAdmin : boolean; onLogout: () => void;}){
+
+
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const [purchaseProduct, setPurchaseProduct] = useState<Product | null>(null);
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
+
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<String[]>([]);
-    
     const [filters, setFilters] = useState<Filters>({});
 
+
+
+    const openPurchaseModal = (product: Product, mode: 'buy' | 'offer') => {
+        setPurchaseProduct(product);
+        setPurchaseMode(mode);
+        setIsPurchaseModalOpen(true);
+    };
+    
+    const closePurchaseModal = () => {
+        setIsPurchaseModalOpen(false);
+        setIsModalOpen(false);
+        setPurchaseProduct(null);
+        refreshData();
+
+    };
+
+    const refreshData = async () => {
+        try {
+            const data = await fetch_get('/items/');
+            setProducts(data);
+        } catch (error) {
+            console.log("Error while refreshing data: ", error);
+        }
+    };
 
     useEffect(() => {
         const fetch_products = async () => {
@@ -439,11 +772,15 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
     const nav = useNavigate();
 
     const navigateMyAuction = () => {
-        nav('/myAuction')
+        nav('/myAuction');
+    };
+
+    const navigateUserlist = () => {
+        nav('/admin');
     };
 
     const navigateChat = () => {
-        nav('/chat')
+        nav('/chatIn')
     };
 
     const applyFilters = async () => {
@@ -466,18 +803,21 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === "Enter"){
             e.preventDefault();
-            applyFilters();
+            // applyFilters();
         }
     };
 
     const handleProductClick = (product: Product) => {
-        setSelectedProduct(product);
-        setIsModalOpen(true);
+        if (purchaseProduct != product) {
+            setSelectedProduct(product);
+            setIsModalOpen(true);
+        }
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedProduct(null);
+        refreshData();
     };
 
 
@@ -510,24 +850,6 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
    
 //   ];
 
-//   const categories = [
-//     "All Categories",
-//     "Books & Magazines",
-//     "Textbooks",
-//     "Fiction",
-//     "Non-Fiction",
-//     "Children's Books",
-//     "Comics & Graphic Novels"
-//   ];
-
-  const formats = [
-    "All Formats",
-    "Hardcover",
-    "Paperback",
-    "Digital/eBook",
-    "Audiobook"
-  ];
-
 
 
     return (
@@ -556,7 +878,7 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                                 />
 
                                 <button
-                                    onClick={applyFilters}
+                                    // onClick={applyFilters}
                                     className="bg-blue-600 text-white px-6 py-2 rounded-r-lg hover:bg-blue-700 transition-colors"
                                 >
                                     Search
@@ -571,7 +893,23 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
+                                
+                                {/* backend. fetch minimata
+                                 {users.length > 0 && ( 
+                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {/* {users.length}
+                                </span> 
+                                // )} */}
+
                             </button>
+
+                            {/* Admin Button */}
+                            {isAdmin && (<button
+                                onClick={navigateUserlist}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Userlist
+                            </button>)}
 
                             {/* Sell Button */}
                             <button
@@ -638,26 +976,6 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                         </div>
 
 
-                        {/* Format Filter */}
-                        <div className="mb-6">
-                            <h4 className="font-medium text-gray-700 mb-2">Format</h4>
-                            <div className="space-y-2">
-                                {formats.map((format, index) => (
-                                    <label key={index} className="flex items-center">
-                                        <input 
-                                            type="radio"
-                                            name="format"
-                                            value={format.toLowerCase().replace(/\s+/g, '-')}
-                                            checked={selectedFormat === format.toLowerCase().replace(/\s+/g, '-')}
-                                            onChange={(e) => setSelectedFormat(e.target.value)}
-                                            className="mr-2 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <span className="text-sm text-gray-700">{format}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
 
                         {/* Apply Filters Button */}
                         <button onClick={applyFilters} className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
@@ -680,25 +998,35 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                                 <div
                                     key={product.id}
                                     className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-4 cursor-pointer transform hover:-translate-y-1"
-                                    onClick={() => handleProductClick(product)}
+                                    onClick={(e) => {
+                                        // Only open modal if we're clicking on the card itself, not a child element
+                                        const target = e.target as HTMLElement;
+                                        const isButton = target.tagName === 'BUTTON' || target.closest('button');
+                                        
+                                        if (!isButton) {
+                                            handleProductClick(product);
+                                        }
+                                    }}
                                 >
                                     <div className="text-6xl text-center mb-3">
                                         {product.image}
                                     </div>
                                     <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{product.name}</h3>
                                     <div className="text-xl font-bold text-green-600 mb-2">
-                                        {product.Buy_Price}
+                                        Buy it now for: {product.Buy_Price}
+                                    </div>
+                                    <div className="text-xl font-bold text-green-600 mb-2">
+                                       Current best Bid: {product.currently}
                                     </div>
                                     <div className="text-sm text-gray-600 mb-3">
                                         Seller: {product.seller.sellerId} ({product.seller.rating} positive)
                                     </div>
-
-
                                     <button
                                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm"
-                                        onClick={(e) => {
+                                        onClick={async (e) => {
+                                            e.preventDefault();
                                             e.stopPropagation();
-                                            console.log("Buy it now clicked for:", product.name);
+                                            openPurchaseModal(product, 'buy');
                                         }}
                                     >
                                         Buy It Now
@@ -710,14 +1038,25 @@ export function EBayPage({ onLogout } : { onLogout: () => void;}){
                 </div>
             </div>
 
-            {/* Modal */}
+            {/* Modal with refresh callback */}
             <ItemModal
+                isAdmin={isAdmin}
                 product={selectedProduct}
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
+                onDataChange={refreshData} // Pass the refresh function
             />
+
+            {/* Purchase Modal with refresh callback */}
+            <PurchaseModal
+                product={purchaseProduct}
+                isOpen={isPurchaseModalOpen}
+                onClose={closePurchaseModal}
+                mode={purchaseMode}
+                onDataChange={refreshData} // Pass the refresh function
+            />
+
         </div>
     );
 
 }
-

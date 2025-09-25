@@ -113,12 +113,17 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
 
   const nav = useNavigate();
 
-  const navigate = () => {
+  const navigateUserlist = () => {
     nav('/admin')
   };
   
+  const navigateEbay = () => {
+    nav('/ebay')
+  };
+  
+
   const navigateChat = () => {
-        nav('/chat')
+        nav('/chatIn')
     };
   // const handleSearch = () => {
   //   console.log("Searching for:", searchQuery);
@@ -231,10 +236,16 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
                   Msgs
               </button>
               <button
-                onClick={navigate}
+                onClick={navigateUserlist}
                 className="relative bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Userlist
+              </button>
+              <button
+                onClick={navigateEbay}
+                className="bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-200"
+              >
+                Ebay
               </button>
               
               {/* Logout Button */}

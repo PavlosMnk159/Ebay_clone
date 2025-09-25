@@ -14,6 +14,8 @@ from .models import Item, Category, Visit, Bid
 from .serializers import ItemSerializer, BidSerializer, AuctionCreation
 from .recomendation_utils import recommend_items
 
+from user_messages.serializers import ConversationSerializer, MessageSerializer
+
 
 class CategoryList(APIView):
     """
@@ -131,9 +133,75 @@ class PlaceBid(APIView):
     
 
 class BuyOut(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     """
     View that allows the user to buy the product now ignoring the auction
     """
     
-    def post(self, request, item_id):
-        pass
+    def post(self, request):
+        item_id = request.data.get('item_id')
+        user = request.user
+
+        if not item_id:
+            return Response(
+                {"error": "Item ID is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        item = get_object_or_404(Item, item_id=item_id)
+        
+        if not item:
+            return Response(
+                {"error": "This item does not exist."},
+                status=status.HTTP_400_BAD_REQUEST
+            )            
+
+        if item.buyer:
+            return Response(
+                {"error": "This item has already been sold."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        item.buyer = user
+        item.active = False
+        item.save()
+
+        conversation_data = {
+            "seller": item.seller.id,
+            "buyer": user.id
+        }
+
+        # Create conversation with user
+        conversation = ConversationSerializer(data = conversation_data)
+        if conversation.is_valid():
+            conversation_instance = conversation.save()
+        else:
+            return Response(
+                {"error": "Failed to create conversation", "details": conversation.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        #add an initial message to the conversation
+        message_data = {
+            "conversation": conversation_instance.id,
+            "message": f"Hi, I am {user.first_name} and i have just purchased {item.name}",
+        }
+
+        message = MessageSerializer(data = message_data)
+        if (message.is_valid()):
+            message.save()
+        else:
+            return Response(
+                {"error": "Failed to send initial message", "details": conversation.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {
+                "message": "Item successfully purchased.",
+                "item_id": item.item_id,
+                "price": str(item.buy_price),
+            },
+            status=status.HTTP_201_CREATED
+        )

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 export function LoginPage({ 
   
   onLogin,
-
+  onAdmin
   }: { 
 
   onLogin: (data: LoginFormData) => void;
@@ -39,6 +39,7 @@ export function LoginPage({
     setTimeout(() => {
         setIsLoading(false);
         onLogin(loginData); // Just pass true to login regardless of credentials
+        onAdmin(loginData);
     }, 1000);   
   };
 

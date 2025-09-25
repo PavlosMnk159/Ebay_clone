@@ -113,12 +113,16 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
 
   const nav = useNavigate();
 
-  const navigate = () => {
+  const navigateRequests = () => {
     nav('/requests')
   };
 
+  const navigateEbay = () => {
+    nav('/ebay')
+  };
+
   const navigateChat = () => {
-        nav('/chat')
+        nav('/chatIn')
     };
 
   // const handleSearch = () => {
@@ -200,7 +204,7 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
                   Msgs
               </button>
               <button
-                onClick={navigate}
+                onClick={navigateRequests}
                 className="relative bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Requests
@@ -210,7 +214,15 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
                   </span>
                 )}
               </button>
-              
+
+              {/* eBay Button */}
+              <button
+                onClick={navigateEbay}
+                className="bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-200"
+              >
+                Ebay
+              </button>
+
               {/* Logout Button */}
               <button
                 onClick={onLogout}

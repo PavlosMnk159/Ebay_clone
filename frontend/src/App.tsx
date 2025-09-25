@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useState,  } from "react";
+import { useNavigate , BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 
 import { loginUser } from "./Authentication/auth.ts";
@@ -23,17 +23,17 @@ import { AdminPage } from './Pages/AdminPage.tsx';
 import { RequestPage } from './Pages/RequestsPage.tsx';
 
 import { BadeBayPage } from './Pages/eBayPageGuest.tsx';
-// import { ChatPage } from './Pages/CustomChatPage.tsx';
-import { ChatPage } from './Pages/ChatPage.tsx';
-
+import { ChatOutPage } from './Pages/ChatOutPage.tsx';
+import { ChatInPage } from "./Pages/ChatInPage.tsx";
 
 function MainApp() {
-  const [currentPage, setCurrentPage] = useState("login");
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currPage, setCurrPage] = useState<string | null>("login");
+  
   // const [hasMessages, setHasMessages] = useState(false)
- 
+
   const navigate = useNavigate(); // Now inside Router context
 
   const navigateToEbay = () => {
@@ -45,16 +45,69 @@ function MainApp() {
   }
 
   const navigateToChat = () => {
-    navigate('/chat');
+    navigate('/chatIn');
+  }
+
+  const navigateToUserlist = () => {
+    navigate('/admin');
   }
 
   
 
+  localStorage.setItem('currentPage', window.location.pathname);
 
+  
+  const restoreAuthState = () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const adminStatus = localStorage.getItem('is_admin'); // Store admin status
+      const userLoggedIn = localStorage.getItem('is_logged_in'); // Store login status
+      const currPage = localStorage.getItem('currentPage'); // Store page status
+      
+      console.log('Restoring auth state:', { token, adminStatus, userLoggedIn , currPage});
+      //token && 
+      if (userLoggedIn === 'true') {
+        setCurrPage(currPage);
+
+        setIsLoggedIn(true);
+        if (adminStatus === 'true') {
+          setIsAdmin(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring auth state:', error);
+      // Clear potentially corrupted data
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('is_admin');
+      localStorage.removeItem('is_logged_in');
+      localStorage.removeItem('currentPage');
+
+    }
+  };
+  
+  const clearAuthState = () => {
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    setCurrPage(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('is_admin');
+    localStorage.removeItem('is_logged_in');
+    localStorage.removeItem('currentPage');
+  };
+
+ useEffect(() => {
+    restoreAuthState();
+  }, []);
+ 
   const handleAdmin = (data: LoginFormData) => {
     if (true) {
 
       setIsAdmin(true);
+      setIsLoggedIn(true);
+
+      localStorage.setItem('is_admin', 'true');
+      localStorage.setItem('is_logged_in', 'true');
+    
       console.log("Admin logged in successfully!");
       console.log(data.username);
       // Optionally navigate to a default page after login
@@ -62,20 +115,15 @@ function MainApp() {
   };
 
 
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    console.log('the token is: ', token);  
-    console.log('curent page: ', currentPage);
-  
-  }, []);
-
   const handleLogin = async (data: LoginFormData) => {
     const response = await loginUser(data);
+    setIsLoggedIn(true);
+    setIsAdmin(true);
+    localStorage.setItem('is_admin', 'true');
+    localStorage.setItem('is_logged_in', 'true');
+
     if (response.success) {
-      setIsLoggedIn(true);
-      setIsAdmin(true);
-      setCurrentPage("chat");
+
     } else {
       alert("Login failed, please try again.");
     }
@@ -85,10 +133,16 @@ function MainApp() {
   const handleRegister = async (data: RegisterFormData) => {
     const response = await registerUser(data);
     if (response.success) {
-      setCurrentPage("login");
     } else {
       alert("Registration failed");
     }
+  };
+
+  const handleLogout = () => {
+    clearAuthState();
+
+    navigate('/login');
+
   };
 
   // Registration success message
@@ -127,30 +181,30 @@ function MainApp() {
   return (
     <Routes>
 
+    <Route path='/' element={<Navigate to='/login' replace />} />
+
       {/*login*/}
       <Route path='/login' element={
-        !isLoggedIn ?
-        <LoginPage onLogin={handleLogin} 
-                  onAdmin={handleAdmin} /> :
-        
-                  isAdmin ?
-                  <AdminPage onLogout={() => {
-                    setIsLoggedIn(false);
-                    setIsAdmin(false);
-                    navigate('/login');
-                  }} /> :
-                <Navigate to="/homepage" replace />
+        !isLoggedIn ? (
+          <LoginPage 
+          onLogin={handleLogin} 
+          onAdmin={handleAdmin} 
+          />
+        ) : currPage?(
+          <Navigate to={currPage} replace />
+        ) : (
+          <Navigate to='/homepage' replace />
+          
+        )
+
       } />
 
       {/*admin*/}
       <Route path='/admin' element={
         isAdmin ?
-          <AdminPage onLogout={() => {
-            setIsLoggedIn(false);
-            setIsAdmin(false);
-            navigate('/login');
-          }} /> :
-        <Navigate to="/login" replace />
+          <AdminPage onLogout={handleLogout} /> 
+          :
+          <Navigate to="/login" replace />
       } />
 
 
@@ -186,11 +240,15 @@ function MainApp() {
                 Start Chatting
               </button>
 
+              {isAdmin && (<button
+                onClick={navigateToUserlist} 
+                className="w-full bg-blue-500 text-white py-2 px-2 rounded-lg hover:bg-blue-600 mb-2">
+
+                See List of Users
+              </button>)}
+
               <button
-                onClick={() => {
-                  setIsLoggedIn(false);
-                  navigate('/login');
-                }}
+                onClick={handleLogout}
                 className="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">
 
                 Logout
@@ -205,10 +263,10 @@ function MainApp() {
       {/*ebay*/}
       <Route path='/ebay' element={
         isLoggedIn ? (
-          <EBayPage onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <EBayPage
+            isAdmin={isAdmin}
+            onLogout={handleLogout}
+          />
         ) : (
           <Navigate to="/login" replace />
         )
@@ -217,10 +275,9 @@ function MainApp() {
       {/*myAuction*/}
       <Route path='/myAuction' element={
         isLoggedIn ? (
-          <AuctionPage onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <AuctionPage 
+            isAdmin={isAdmin}
+            onLogout={handleLogout} />
         ) : (
           <Navigate to="/login" replace />
         )
@@ -229,10 +286,7 @@ function MainApp() {
       {/*my bids */}
       <Route path='/mybids' element={
         isLoggedIn ? (
-          <BidPage onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <BidPage onLogout={handleLogout} />
         ) : (
           <Navigate to="/login" replace />
         )
@@ -241,10 +295,7 @@ function MainApp() {
       {/*Item bidds */}
       <Route path='/itembids/:productId' element={
         isLoggedIn ? (
-          <ItemBidPage onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <ItemBidPage onLogout={handleLogout} />
         ) : (
           <Navigate to="/login" replace />
         )
@@ -253,22 +304,28 @@ function MainApp() {
       {/*makeAuction*/}
       <Route path='/makeAuction' element={
         isLoggedIn ? (
-          <MakeAuction onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <MakeAuction onLogout={handleLogout} />
         ) : (
           <Navigate to="/login" replace />
         )
       } />
 
-      {/*chat*/}
-      <Route path='/chat' element={
+      {/*Inchat*/}
+      <Route path='/chatIn' element={
         isLoggedIn ? (
-          <ChatPage onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <ChatInPage 
+            isAdmin={isAdmin}
+            onLogout={handleLogout} 
+          />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      {/*Outchat*/}
+      <Route path='/chatOut' element={
+        isLoggedIn ? (
+          <ChatOutPage onLogout={handleLogout} />
         ) : (
           <Navigate to="/login" replace />
         )
@@ -276,20 +333,14 @@ function MainApp() {
 
       {/*ebay Guest only*/}
       <Route path='/badebay' element={
-          <BadeBayPage onLogout={() => {
-            setIsLoggedIn(false);
-            navigate('/login');
-          }} />
+          <BadeBayPage onLogout={handleLogout} />
       } />
 
       {/*admin requests*/}
       <Route path='/requests' element={
         isAdmin ?
-          <RequestPage onLogout={() => {
-            setIsLoggedIn(false);
-            setIsAdmin(false);
-            navigate('/login');
-          }} /> :
+          <RequestPage onLogout={handleLogout} /> 
+          :
           <Navigate to="/login" replace />
 
       } />

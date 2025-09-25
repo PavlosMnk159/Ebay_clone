@@ -13,7 +13,7 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
   
   
     const navigateChat= ()=>{
-      nav('/chat')
+      nav('/chatIn')
     }
 
     const navigateMyAuctions= ()=>{
@@ -28,8 +28,12 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
     buy_price: "",
     ends: "",
     description: "",
-    image: null as File | null
+    image: null as File | null,
+    location: ""
   });
+
+  // Backend
+  // fetch categories
 
   const categories = [
     "Books & Magazines",
@@ -62,7 +66,10 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
     console.log("Starting auction with data:", sellingData);
     alert("Auction started successfully! Your item is now live.");
 
-    // here send post to backend
+    // Backend
+    // here post new Auction
+    // εδω ειναι .json τα στοιχεια 
+    //κανεις και fetch νομιζω για τα υπολοιπα στοιχεια    
     try {
 
       const res = await fetch_with_auth.post('/create_item/', sellingData);
@@ -79,7 +86,8 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
           buy_price: "",
           ends: "",
           description: "",
-          image: null
+          image: null,
+          location: ""
         });
 
       }
@@ -125,6 +133,12 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                 Msgs
+                {/* backend. fetch minimata
+                                 {users.length > 0 && ( 
+                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {/* {users.length}
+                                </span> 
+                                // )} */}
               </button>
               
               <button
@@ -316,6 +330,22 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 Be specific and descriptive
               </p>
             </div>
+
+
+            {/* Details */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Itme's Location *
+              </label>
+              <input
+                type="text"
+                placeholder="Enter the location of the item"
+                className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                value={sellingData.location}
+                onChange={(e) => handleSellingDataChange('location', e.target.value)}
+              />
+            </div>
+
             {/* Pricing Section */}
             <div className="bg-blue-50 p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">💰 Pricing Information</h3>
@@ -342,27 +372,6 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 </p>
               </div>
               
-              {/* Lowest Price */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Reserve Price (EUR) *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-4 text-gray-500 text-lg">€</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="0.00"
-                    className="w-full pl-8 p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                    value={sellingData.currently}
-                    onChange={(e) => handleSellingDataChange('currently', e.target.value)}
-                  />
-                </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  The minimum price you're willing to accept - item won't sell below this amount
-                </p>
-              </div>
 
               {/* Target Price with Toggle */}
               <div className="mb-6">

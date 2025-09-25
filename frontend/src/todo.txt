@@ -1,183 +1,27 @@
-ebay
-    Buy it now
-    Make offer
-    messeges
-    filters
-    search
-myAuction
-    startAuction
-    editAuction
-    deleteAuction
+Front
+    general 
+        loading animation 
+        pseudo pages organise them
 
-make all options available for creation
-add option to create a category
+    MakeAuction
+        location sting to numbers
 
 
 
 
+Back
+    myAuction
+        post edited item
+        post delete auction
 
-interface Bid {
-    bidder: Bidder;
-    time: number; //time the bid was made
-    amount: number;
-}
+    MakeAuction
+        fetch categories
+        post new Auction
 
-interface Bidder {
-    userID: string;
-    rating: number;
-    location: {
-        lat: number,
-        lng: number
-    }
-    country: string;
-}
-
-interface Product {
-    id: number;
-    name: string;
-    category: string;
-    currently: number;
-    Buy_Price: number;
-    First_Bid:number;
-    Number_of_Bids: number;
-    Bids: Bid[] | null;
-    started: number;
-    ends: number;
-    seller: {
-        sellerId: string,
-        rating: string
-    };
-    description: string;
-    image: string;
-    location: {
-        lat: number,
-        lng: number
-    };
-    city: string;
-    isActive: number;
-}
+    eBay
+        extract product as an XML
+        
 
 
 
-    
-    const bidders: Bidder[] = [
-        {
-            userID: "1",
-            rating: 0.8,
-            location: {
-                lat: 40,
-                lng: 70
-            },
-            country: "Athens, Greece",
-        },{
-            userID: "2",
-            rating: 0.6,
-            location: {
-                lat: 80,
-                lng: 70
-            },
-            country: "Thessaloniki, Greece",
-        }
-    ];
-    
-    const biddings: Bid [] = [
-      {
-          bidder: bidders[0],
-          time: 16092025,
-          amount: 12
-      },      {
-          bidder: bidders[1],
-          time: 16092025,
-          amount: 14
-      },
-        {
-          bidder: bidders[1],
-          time: 16092025,
-          amount: 15
-      }
-    ];
 
-
-const products = [
-    {
-    id: 1,
-    name: "The Great Gatsby - Classic Literature",
-    category: "Books",
-    currently: 12,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 3,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 1
-    },  {
-    id: 2,
-    name: "Active",
-    category: "Books",
-    currently: 10,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 0,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 1
-
-    }, {
-    id: 3,
-    name: "Not Active",
-    category: "Books",
-    currently: 10,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 0,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 0
-
-    }
-};
-το login πρεπει να γινεται με το username ειναι pain in the ass να αλλαξω τα defaults στο backend και το λεει και η εκφωνηση
-
-για μετα αλλα για τα options που δεν ειναι διαθεσιμα για καποιον χρηστη να μην ειναι διαθέσιμα (π.χ. μονο ο seller να βλεπει την επιλογει να αλλαξει το listing)
-
-δεν ξερω αν το κανεις αλλα να τσεκαρεις οτι το password και το confirm password ειναι τα ιδια. μπορει να βαλω μετα να γινεται και στο backend αυτος ο ελεγχος. (apparently ειναι καλη πρακτικη να γινεται και στα δυο μερη)
-
-αν σου πεταξει error το login να κανεις πραγματα idk να βγαζει οτι ειναι λαθος (πρεπει να μην λεει τι ειναι λαθος για security)
-
-εχει ενα loading animation που ειχε και στον διαγωνισμο. Αυτο ειναι μονο στο chat ενω το θελουμε παντου
