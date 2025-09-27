@@ -29,7 +29,7 @@ interface Product {
     Number_of_Bids: number;
     Bids: Bid[] | null;
     started: string;
-    ends: string;
+    ends: number;
     time_left: string;
     seller: {
         sellerId: string,
@@ -466,7 +466,15 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
     };
  
     const handleActivation = (product: Product) => {
-        product.isActive = 1;
+        // // take currTime
+        // const currTime = 27092025;
+        // if (product.ends < currTime){
+        //     alert("End time is not correct. Please change it before starting the Auction!");
+        // }else{
+        //     // backend
+        //     // post to isActive
+            product.isActive = 1;
+        // }
     };
 
 
@@ -561,7 +569,8 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
     //         lng: -74.0060,
     //     },
     //     city: "New York, NY",
-    //     isActive: 1
+    //     isActive: 1,
+    //     isBought: 0
     //     },  {
     //     id: 2,
     //     name: "Active",
@@ -584,6 +593,7 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
     //         lng: -74.0060,
     //     },
     //     city: "New York, NY",
+    //     isBought: 0,
     //     isActive: 1
 
     //     }, {
@@ -608,11 +618,17 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
     //         lng: -74.0060,
     //     },
     //     city: "New York, NY",
+    //     isBought: 0,
     //     isActive: 0
 
     //     }
         
     // ];
+
+  // backend
+  // fetch unread 
+  const unread = 3;
+
 
 
     return (
@@ -653,16 +669,21 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                             {/* Message Button */}
                             <button
                                 onClick={navigateChat}
-                                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                                className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
-                                {/* backend. fetch minimata
-                                 {users.length > 0 && ( 
-                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                                    {/* {users.length}
-                                </span> 
-                                // )} */}
+                                {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {unread}
+                                </span>)}
                             </button>
+
+                            {/* userlist Button */}
+                            {isAdmin && (<button
+                                onClick={navigateUserlist}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Userlist
+                            </button>)}
 
                             {/* Sell Button */}
                             <button
@@ -672,14 +693,6 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                                 Ebay
                             </button>
                             
-                            {/* Sell Button */}
-                            {isAdmin && (<button
-                                onClick={navigateUserlist}
-                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                            >
-                                Userlist
-                            </button>)}
-
                             {/* Logout Button */}
                             <button
                                 onClick={onLogout}

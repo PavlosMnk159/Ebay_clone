@@ -2,23 +2,55 @@ import fetch_with_auth from "@/Authentication/axios";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
+
+async function geocodeWithAPI(address: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const encodedAddress = encodeURIComponent(address);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      };
+    }
+    
+    return null; // No results found
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
+  }
+}
+
+export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout: () => void; }) {
 
 
     const nav = useNavigate();
   
-    const navigateEbay= ()=>{
+    const navigateEbay= () => {
       nav('/ebay')
     }
   
-  
-    const navigateChat= ()=>{
+    const navigateChat= () => {
       nav('/chatIn')
     }
 
-    const navigateMyAuctions= ()=>{
+    const navigateMyAuctions= () => {
       nav('/myAuction')
     }
+
+    const navigateUserlist = () => {
+      nav('/admin');
+    };
+
 
   // Selling page state
   const [sellingData, setSellingData] = useState({
@@ -62,14 +94,33 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
     handleSellingDataChange('image', file);
   };
 
+  const handleLocationSearch = async (searchLocation : string) => {
+    if (!searchLocation.trim()) return;
+    
+    try {
+        const coords = await geocodeWithAPI(searchLocation);
+        if (coords) {
+            // setMapCoords(coords);
+            alert('Found location');
+          } else {
+            alert('Location not found, will put coordinates: (0,0) ');
+            // alert(searchLocation);
+          }
+          return coords;
+    } catch (error) {
+        console.error('Geocoding failed:', error);
+        alert('Failed to find location');
+    }
+  };
+
+
+
   const handleStartAuction = async () => {
     console.log("Starting auction with data:", sellingData);
-    alert("Auction started successfully! Your item is now live.");
+    // alert("Auction has been created. You can make it live in your Autions List");
 
-    // Backend
-    // here post new Auction
-    // εδω ειναι .json τα στοιχεια 
-    //κανεις και fetch νομιζω για τα υπολοιπα στοιχεια    
+    handleLocationSearch(sellingData.location);
+
     try {
 
       const res = await fetch_with_auth.post('/create_item/', sellingData);
@@ -114,6 +165,10 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                      sellingData.currently &&
                      sellingData.ends;
 
+  // backend
+  // fetch unread 
+  const unread = 3;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -129,18 +184,22 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
             <div className="flex items-center gap-4">
 
               <button
-                onClick={navigateChat}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                  onClick={navigateChat}
+                  className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
-                Msgs
-                {/* backend. fetch minimata
-                                 {users.length > 0 && ( 
-                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                                    {/* {users.length}
-                                </span> 
-                                // )} */}
+                  Msgs
+                  {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                      {unread}
+                  </span>)}
               </button>
               
+              {isAdmin && (<button
+                  onClick={navigateUserlist}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                  Userlist
+              </button>)}
+
               <button
                 onClick={navigateEbay}
                 className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
@@ -193,7 +252,7 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 placeholder="Enter a descriptive name for your item"
                 className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                 value={sellingData.name}
-                onChange={(e) => handleSellingDataChange('name', e.target.value)}
+                onChange={(e) => {handleSellingDataChange('name', e.target.value)}}
               />
               <p className="text-sm text-gray-500 mt-2">
                 Be specific and descriptive - buyers search by item names
@@ -342,7 +401,9 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                 placeholder="Enter the location of the item"
                 className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                 value={sellingData.location}
-                onChange={(e) => handleSellingDataChange('location', e.target.value)}
+                onChange={(e) => {handleSellingDataChange('location', e.target.value);
+                  // handleLocationSearch("Paris, France");
+                }}
               />
             </div>
 
@@ -438,6 +499,7 @@ export function MakeAuction({ onLogout }: { onLogout: () => void; }) {
                     <p><strong>Buy It Now:</strong> €{sellingData.buy_price}</p>
                   )}
                   <p><strong>Reserve Price:</strong> €{sellingData.currently}</p>
+                  <p><strong>Location</strong> {sellingData.location}</p>
                   {sellingData.image && (
                     <p><strong>Image:</strong> ✅ Uploaded ({sellingData.image.name})</p>
                   )}

@@ -1,27 +1,57 @@
 Front
     general 
-        loading animation 
+        minimata
         pseudo pages organise them
-
-    MakeAuction
-        location sting to numbers
+        icons/profile pics????
 
 
 
+eikones sto make kai ebay button
+    .jpg
+XML
 
-Back
-    myAuction
-        post edited item
-        post delete auction
 
+ 
+Backend
+    general 
+        fetch unread minimata
+
+    App 
+        post new register user
+
+    RegisterPage
+        #2 fetch all Usernames
+
+    AdminPage 
+        #4 fetch users
+        post delete User
+        fetch new requests
+
+    RequestPage 
+        fetch Requests
+        post accept Request 
+        post delete Request 
+
+    #7.1 
     MakeAuction
         fetch categories
         post new Auction
 
+    myAuction
+        #7.3 post edited item
+        #7.3 post delete auction
+        #7.3 post isActive
+
+    myBids 
+        fetch products
+
     eBay
-        extract product as an XML
+        #8 location filter
+        #9 post offer/buy
+        #12 extract product as an XML
         
 
 
 
-
+final tests 
+    register new user 

@@ -27,6 +27,11 @@ interface ItemModalProps {
 function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
   if (!isOpen ||!user) return null;
 
+  const handleDeleteUser = () => {
+    // backend
+    // post delete "user" poy dinete stin sunartisi
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -89,10 +94,10 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
 
               {/* Action buttons */}
               <div className="space-y-3">
-                <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                  Message User
-                </button>
-                <button className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium">
+                <button className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                        onClick={handleDeleteUser}
+                >
+
                   Delete user
                 </button>
               </div>
@@ -146,7 +151,8 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
     setSelectedProduct(null);
   };
 
-  
+  // backend 
+  // fetch users
   const users = [
     {
       id: 1,
@@ -182,7 +188,12 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
    }
   ];
 
+  // backend
+  // fetch new requests
 
+  //backend
+  // messeges
+  const unread = 3;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -199,9 +210,12 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
               {/* Requests Button */}
               <button
                   onClick={navigateChat}
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                  className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                   Msgs
+                  {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                    {unread}
+                  </span>)}
               </button>
               <button
                 onClick={navigateRequests}
