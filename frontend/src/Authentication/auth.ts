@@ -5,7 +5,6 @@ import { BASE_URL } from '@/config/url';
 
 export const loginUser = async (data: LoginFormData) => {
   try {
-    console.log("login running", BASE_URL);
     const res = await axios.post(`${BASE_URL}/token/`, data);
     localStorage.setItem('access_token', res.data.access);
     localStorage.setItem('refresh_token', res.data.refresh);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 
@@ -22,15 +22,12 @@ import { BidPage } from './Pages/myBidPage.tsx'
 import { AdminPage } from './Pages/AdminPage.tsx';
 import { RequestPage } from './Pages/RequestsPage.tsx';
 
-// this is a comment
-
 import { BadeBayPage } from './Pages/eBayPageGuest.tsx';
 // import { ChatPage } from './Pages/CustomChatPage.tsx';
 import { ChatOutPage } from './Pages/ChatOutPage.tsx';
 import { ChatInPage } from "./Pages/ChatInPage.tsx";
 
 function MainApp() {
-  const [currentPage, setCurrentPage] = useState("login");
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -63,15 +60,6 @@ function MainApp() {
     }
   };
 
-
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    console.log('the token is: ', token);  
-    console.log('curent page: ', currentPage);
-  
-  }, []);
-
   const handleLogin = async (data: LoginFormData) => {
     const response = await loginUser(data);
     if (response.success) {
@@ -85,9 +73,7 @@ function MainApp() {
 
   const handleRegister = async (data: RegisterFormData) => {
     const response = await registerUser(data);
-    if (response.success) {
-      setCurrentPage("login");
-    } else {
+    if (!response.success) {
       alert("Registration failed");
     }
   };

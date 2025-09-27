@@ -84,13 +84,14 @@ class ItemSerializer(serializers.ModelSerializer):
     isActive = serializers.IntegerField(source='active')
     image = serializers.CharField(default="📚")  # customize this if you have image field
     time_left = serializers.SerializerMethodField() 
+    first_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
         fields = [
             'id', 'name', 'category', 'currently', 'Buy_Price', 'First_Bid',
             'Number_of_Bids', 'Bids', 'started', 'ends', 'time_left', 'seller', 'description',
-            'image', 'location', 'city', 'isActive'
+            'image', 'location', 'city', 'isActive', 'first_image'
         ]
 
     def get_category(self, obj):
@@ -130,3 +131,8 @@ class ItemSerializer(serializers.ModelSerializer):
             return f"{days}d {hours}h {minutes}m {seconds}s"
         return "Ended"
     
+    def get_images(self, obj):
+        """
+        Returns a list of URLs for all images of the item.
+        """
+        return [img.image.url for img in obj.images.all()] 

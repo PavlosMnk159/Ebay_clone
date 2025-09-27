@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:22-bullseye AS build
 
 WORKDIR /app
 
@@ -9,6 +9,8 @@ COPY . .
 
 RUN npm run build
 
-EXPOSE 80
+EXPOSE 443
 
-CMD ["npm", "run", "dev", "--", "--host"]
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]

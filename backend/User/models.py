@@ -11,6 +11,7 @@ class CustomUser(AbstractUser):
     house_number = models.IntegerField()
     phone = PhoneNumberField(region='GR')
     AFM = models.IntegerField()
+    is_approved = models.BooleanField(default=False)
 
     class Meta:
         permissions = [

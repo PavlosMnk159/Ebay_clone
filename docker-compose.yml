@@ -13,7 +13,7 @@ services:
     frontend:
         build: ./frontend
         ports:
-        - "80:80"   # React dev server default port
+        - "443:443"   # React dev server default port
         depends_on:
         - backend
         volumes:

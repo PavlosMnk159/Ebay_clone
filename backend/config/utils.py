@@ -142,7 +142,6 @@ def load_items_from_xml(path):
         items_to_create = []
         users_to_create = []
         bids_to_create = []
-        categories_to_create = []
 
         processed_count = 0
         skipped_count = 0
@@ -217,11 +216,6 @@ def load_items_from_xml(path):
                 )
                 items_to_create.append(item)
 
-                #Handle categories
-                categories = [c.text for c in item_el.findall('Category')]
-                for c in item_el.findall('Category'):
-                    categories_to_create.append((Category(name=c.text), item))
-
                 # Handle bids
                 bids_tag = item_el.find('Bids')
                 if bids_tag is not None:
@@ -266,15 +260,42 @@ def load_items_from_xml(path):
                     Item.objects.bulk_create(items_to_create, batch_size=100)
                 if bids_to_create:
                     Bid.objects.bulk_create(bids_to_create, batch_size=100)
-                if categories_to_create:
-                    for cat, item in categories_to_create:
-                        cat.save()
-                        item.categories.add(cat)
-            print(f"Saved {len(users_to_create)} users, {len(items_to_create)} items, {len(bids_to_create)} bids, {len(categories_to_create)} categories from {file}")
+
+            print(f"Saved {len(users_to_create)} users, {len(items_to_create)} items, {len(bids_to_create)} bids")
         except Exception as e:
             print(f"Error during bulk save for {file}: {e}")
 
         print(f"Processed {processed_count} items, skipped {skipped_count}, errors {error_count}")
 
 def create_admin():
-    pass
+    user = CustomUser.objects.create_user(
+        username="admin",
+        password="test1234",
+        email="admin@example.com",
+        country="Greece",
+        region="Attica",
+        city="Athens",
+        postal_code="12345",
+        address="Some Street",
+        house_number=10,
+        phone="+306912345678",
+        AFM=123456789,
+        is_approved=True  # Mark as approved
+    )
+
+    all_permissions = Permission.objects.all()
+    user.user_permissions.set(all_permissions)
+
+    user.is_staff = True
+    user.is_superuser = True
+    user.save()
+
+def load_categories(file_path="categories.xml"):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+
+    for category_el in root.findall("Category"):
+        name = category_el.text.strip()
+        Category.objects.get_or_create(name=name)
+
+    print("Categories loaded successfully")

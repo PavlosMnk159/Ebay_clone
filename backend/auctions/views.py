@@ -6,7 +6,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Max
+from django.http import HttpResponse
+
 
 from decimal import Decimal
 
@@ -15,6 +17,10 @@ from .serializers import ItemSerializer, BidSerializer, AuctionCreation
 from .recomendation_utils import recommend_items
 
 from user_messages.serializers import ConversationSerializer, MessageSerializer
+
+from User.permissions import IsApproved, CanViewUserDetails
+
+import xml.etree.ElementTree as ET
 
 
 class CategoryList(APIView):
@@ -36,9 +42,35 @@ class ItemList(APIView):
         min = request.GET.get('min')
         max = request.GET.get('max')
         query = request.GET.get('query')
+        location = request.GET.get('location')
         
 
         now = timezone.now()
+        recently_unavailable_items = Item.objects.filter(ends__lte=now)
+        recently_unavailable_items.update(active=False)  
+
+        #Get the highest bids per Item
+        highest_bids = (
+            Bid.objects.filter(item__in=recently_unavailable_items)
+            .values('item')
+            .annotate(max_amount=Max('amount'))
+        )
+
+        # Get the corresponding bidder for each of these bids
+        highest_bids = (
+            Bid.objects.filter(item__in=recently_unavailable_items)
+            .values('item')                       # group by item
+            .annotate(max_amount=Max('amount'))   # highest bid per item
+        )
+
+        # Assign the highest bidder as the buyer of each item
+        for hb in highest_bids:
+            item = Item.objects.get(id=hb['item'])
+            top_bid = Bid.objects.filter(item=item, amount=hb['max_amount']).first()
+            if top_bid:
+                item.buyer = top_bid.bidder
+                item.save()
+
         available_items = Item.objects.filter(active=True, ends__gt=now).order_by('ends')
         
         if (category):
@@ -52,6 +84,9 @@ class ItemList(APIView):
 
         if (query):
             available_items = available_items.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
+        if (location):
+            available_items = available_items.filter(Q(location__icontains=location) | Q(country__icontains=location))
         
         available_items = list(available_items)
 
@@ -77,7 +112,7 @@ class MyItemList(APIView):
     View to list all the items auctioned by the logged in user.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsApproved]
 
     def get(self, request):
         user = request.user
@@ -105,7 +140,7 @@ class ItemDetail(APIView):
     
 class CreateAuctionItem(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsApproved]
     """
     View that creates an auction item
     """
@@ -118,10 +153,67 @@ class CreateAuctionItem(APIView):
             return Response({"detail": "Item created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class EditAuctionItem(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsApproved]
+
+    def post(self, request):
+        user = request.user
+        item_id = request.data.get('item_id')
+
+
+        item = get_object_or_404(Item, item_id=item_id)
+
+        # Ensure that only the seller can edit
+        if item.seller != user:
+            return Response(
+                {"error": "You are not allowed to edit this item."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Prevent editing once auction has ended or item sold
+        if not item.active or item.ends <= timezone.now() or item.buyer:
+            return Response(
+                {"error": "You cannot edit this item after it has ended or been sold."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = AuctionCreation(item, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Item updated successfully"}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeleteAuctionItem(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsApproved]
+
+    def post(self, request):
+        user = request.user
+        item_id = request.data.get("item_id")
+
+        item = get_object_or_404(Item, item_id=item_id)
+
+        if not item:
+            return Response({"error": "no such item"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if (item.seller != user):
+            return Response({"error": "You cannot delete this item"}, status=status.HTTP_403_FORBIDDEN)
+        
+        if item.buyer or item.number_of_bids != 0:
+            return Response({"error": "This item cannot be deleted as it has a bid"}, status=status.HTTP_403_FORBIDDEN)
+        
+        item.delete()
+        return Response({"error": "Item deleted successfully"}, status=status.HTTP_200_OK)
+    
 class PlaceBid(APIView):
     """
     View to place a bid on a specific item
     """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsApproved]
     
     def post(self, request):
         serialiser = BidSerializer(data=request.data)
@@ -134,7 +226,7 @@ class PlaceBid(APIView):
 
 class BuyOut(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsApproved]
     """
     View that allows the user to buy the product now ignoring the auction
     """
@@ -205,3 +297,167 @@ class BuyOut(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+class ActiveItemsXMLView(APIView):
+    """
+    Returns all active items in XML format, fully matching the example structure.
+    """
+    # authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated, CanViewUserDetails]
+
+    def get(self, request):
+        items = Item.objects.prefetch_related('categories', 'bids', 'bids__bidder').filter(active=True)
+
+        root = ET.Element("Items")
+        for item in items:
+            # Item element
+            item_el = ET.SubElement(root, "Item", ItemID=str(item.item_id))
+            ET.SubElement(item_el, "Name").text = item.name
+
+            # Categories
+            for category in item.categories.all():
+                ET.SubElement(item_el, "Category").text = category.name
+
+            # Prices and bids
+            ET.SubElement(item_el, "Currently").text = f"${item.currently}"
+            if item.first_bid:
+                ET.SubElement(item_el, "First_Bid").text = f"${item.first_bid}"
+            ET.SubElement(item_el, "Number_of_Bids").text = str(item.number_of_bids)
+
+            # Bids
+            bids_el = ET.SubElement(item_el, "Bids")
+            for bid in item.bids.all():
+                bid_el = ET.SubElement(bids_el, "Bid")
+                bidder_el = ET.SubElement(
+                    bid_el,
+                    "Bidder",
+                    Rating=str(getattr(bid.bidder, 'rating', 0)),
+                    UserID=bid.bidder.username
+                )
+
+                ET.SubElement(bid_el, "Time").text = bid.time.strftime("%b-%d-%y %H:%M:%S")
+                ET.SubElement(bid_el, "Amount").text = f"${bid.amount}"
+
+            # Item location and country
+            ET.SubElement(item_el, "Location").text = item.location or ""
+            ET.SubElement(item_el, "Country").text = item.country or ""
+
+            # Auction dates
+            ET.SubElement(item_el, "Started").text = item.started.strftime("%b-%d-%y %H:%M:%S")
+            ET.SubElement(item_el, "Ends").text = item.ends.strftime("%b-%d-%y %H:%M:%S")
+
+            # Seller info with rating, location, and country
+            seller_el = ET.SubElement(
+                item_el,
+                "Seller",
+                Rating=str(getattr(item.seller, 'rating', 0)),
+                UserID=item.seller.username
+            )
+
+            # Description
+            ET.SubElement(item_el, "Description").text = item.description or ""
+
+        xml_str = ET.tostring(root, encoding="utf-8")
+        return HttpResponse(xml_str, content_type="application/xml")
+    
+class ActiveItemsExportView(APIView):
+    """
+    Returns all active items in XML or JSON depending on 'format' query parameter.
+    Use ?format=json or ?format=xml
+    """
+    # authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated, IsApproved]
+
+    def get(self, request):
+        export_format = request.query_params.get("format", "json").lower()
+        items = Item.objects.prefetch_related("categories", "bids", "bids__bidder").filter(active=True)
+
+        if export_format == "json":
+            data = []
+            for item in items:
+                item_data = {
+                    "ItemID": item.item_id,
+                    "Name": item.name,
+                    "Categories": [c.name for c in item.categories.all()],
+                    "Currently": float(item.currently),
+                    "First_Bid": float(item.first_bid) if item.first_bid else None,
+                    "Number_of_Bids": item.number_of_bids,
+                    "Bids": [
+                        {
+                            "Bidder": {
+                                "UserID": bid.bidder.username,
+                                "Rating": getattr(bid.bidder, "rating", 0),
+                            },
+                            "Time": bid.time.strftime("%b-%d-%y %H:%M:%S"),
+                            "Amount": float(bid.amount),
+                        }
+                        for bid in item.bids.all()
+                    ],
+                    "Location": item.location or "",
+                    "Country": item.country or "",
+                    "Started": item.started.strftime("%b-%d-%y %H:%M:%S"),
+                    "Ends": item.ends.strftime("%b-%d-%y %H:%M:%S"),
+                    "Seller": {
+                        "UserID": item.seller.username,
+                        "Rating": getattr(item.seller, "rating", 0),
+                    },
+                    "Description": item.description or "",
+                }
+                data.append(item_data)
+            return JsonResponse(data, safe=False)
+
+        elif export_format == "xml":
+            root = ET.Element("Items")
+            for item in items:
+                item_el = ET.SubElement(root, "Item", ItemID=str(item.item_id))
+                ET.SubElement(item_el, "Name").text = item.name
+                for category in item.categories.all():
+                    ET.SubElement(item_el, "Category").text = category.name
+
+                ET.SubElement(item_el, "Currently").text = f"${item.currently}"
+                if item.first_bid:
+                    ET.SubElement(item_el, "First_Bid").text = f"${item.first_bid}"
+                ET.SubElement(item_el, "Number_of_Bids").text = str(item.number_of_bids)
+
+                bids_el = ET.SubElement(item_el, "Bids")
+                for bid in item.bids.all():
+                    bid_el = ET.SubElement(bids_el, "Bid")
+                    bidder_el = ET.SubElement(
+                        bid_el,
+                        "Bidder",
+                        Rating=str(getattr(bid.bidder, "rating", 0)),
+                        UserID=bid.bidder.username,
+                    )
+                    location = getattr(getattr(bid.bidder, "profile", None), "location", "")
+                    country = getattr(getattr(bid.bidder, "profile", None), "country", "")
+                    ET.SubElement(bidder_el, "Location").text = location or ""
+                    ET.SubElement(bidder_el, "Country").text = country or ""
+
+                    ET.SubElement(bid_el, "Time").text = bid.time.strftime("%b-%d-%y %H:%M:%S")
+                    ET.SubElement(bid_el, "Amount").text = f"${bid.amount}"
+
+                ET.SubElement(item_el, "Location").text = item.location or ""
+                ET.SubElement(item_el, "Country").text = item.country or ""
+                ET.SubElement(item_el, "Started").text = item.started.strftime("%b-%d-%y %H:%M:%S")
+                ET.SubElement(item_el, "Ends").text = item.ends.strftime("%b-%d-%y %H:%M:%S")
+
+                seller_el = ET.SubElement(
+                    item_el,
+                    "Seller",
+                    Rating=str(getattr(item.seller, "rating", 0)),
+                    UserID=item.seller.username,
+                )
+                seller_location = getattr(getattr(item.seller, "profile", None), "location", "")
+                seller_country = getattr(getattr(item.seller, "profile", None), "country", "")
+                if seller_location:
+                    ET.SubElement(seller_el, "Location").text = seller_location
+                if seller_country:
+                    ET.SubElement(seller_el, "Country").text = seller_country
+
+                ET.SubElement(item_el, "Description").text = item.description or ""
+
+            xml_str = ET.tostring(root, encoding="utf-8")
+            return HttpResponse(xml_str, content_type="application/xml")
+
+        else:
+            return JsonResponse({"error": "Invalid format, must be 'json' or 'xml'."}, status=400)

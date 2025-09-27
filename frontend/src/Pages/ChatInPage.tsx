@@ -107,11 +107,12 @@ export function ChatInPage({ onLogout }: { onLogout: () => void; }) {
             }
         ]
     });
+
+
     
     const [inputText, setInputText] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [activeChat, setActiveChat] = useState("TechBooks");
-    const [appReady, setAppReady] = useState(false);
 
     const nav = useNavigate();
     
@@ -143,31 +144,15 @@ export function ChatInPage({ onLogout }: { onLogout: () => void; }) {
         }
     };
 
-    // Poll backend status on mount
     useEffect(() => {
-        let interval: ReturnType<typeof setInterval>;
-        
-        // Function to check if backend status
-        const checkStatus = async () => {
-            try {
-                // Make request to backend status endpoint
-                const res = await fetch("http://localhost:8000/status/");
-                const data = await res.json();
-           
-            // If backend reports ready, stop polling
-                if (data.ready) {
-                    setAppReady(true);
-                    if (interval) clearInterval(interval);
-                }
-            } catch (e) {
-                console.log("error while checking status:", e);
-                // Ignore errors and continue polling
-            }
-        };
-        
-        checkStatus();
-        interval = setInterval(checkStatus, 1500);
-        return () => clearInterval(interval);
+        const get_initial_data = async () => {
+            const convo_res = await fetch_with_auth.get('/get_conversations/');
+            const data = convo_res.data;
+            console.log("conversations");
+            console.log(data);
+        }
+
+        get_initial_data();
     }, []);
 
     // Check if there are any messages
@@ -275,22 +260,6 @@ export function ChatInPage({ onLogout }: { onLogout: () => void; }) {
             sendMessage();
         }
     };
-
-    // Loading screen while backend initializes
-    if (!appReady) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-100">
-                <div className="flex flex-col items-center">
-                    <div className="flex space-x-2 mb-4">
-                        <div className="w-4 h-4 bg-blue-600 rounded-full animate-bounce"></div>
-                        <div className="w-4 h-4 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                        <div className="w-4 h-4 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></div>
-                    </div>
-                    <div className="text-blue-700 font-semibold text-lg">Loading application...</div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4">

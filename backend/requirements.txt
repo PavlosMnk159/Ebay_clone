@@ -3,6 +3,8 @@ djangorestframework>=3.14.0
 django-cors-headers>=4.0.0
 django-phonenumber-field[phonenumbers]
 djangorestframework-simplejwt
+django-sslserver
 faker
 lxml
 numpy
+Pillow

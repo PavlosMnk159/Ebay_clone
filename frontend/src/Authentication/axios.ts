@@ -12,7 +12,6 @@ const fetch_with_auth = axios.create({
 
 fetch_with_auth.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
-  console.log(localStorage.getItem('access_token'));
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }

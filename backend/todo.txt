@@ -1,8 +1,0 @@
-password confirmation in backend too
-password strength check
-ssl tls
-logout
-organise the serialisers
-I am currently deleting migrations automatically. Remove for produciton code
-there are duplicates in the users fix that
-i am not loading everything into items (bids location categories ...)

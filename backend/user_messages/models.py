@@ -30,8 +30,15 @@ class Conversations(models.Model):
 
 class Messages(models.Model):
     conversation = models.ForeignKey(Conversations, on_delete=models.CASCADE, related_name="message")
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="message")
+    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="receiver_message")
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    seen = models.BooleanField(default=False)
+
+    deleted_by_sender = models.BooleanField(default=False)
+    deleted_by_receiver = models.BooleanField(default=False)
+
 
     class Meta:
         ordering = ["timestamp"]  # Messages come in chronological order

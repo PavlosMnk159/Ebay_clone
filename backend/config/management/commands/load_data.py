@@ -4,7 +4,7 @@ from django.db.migrations.executor import MigrationExecutor
 from django.db.utils import OperationalError, ProgrammingError
 import os
 
-from config.utils import load_users_from_xml, load_items_from_xml
+from config.utils import load_users_from_xml, load_items_from_xml, create_admin, load_categories
 
 class Command(BaseCommand):
     help = 'Loads data fixtures into the database after confirming all migrations are applied.'
@@ -39,6 +39,8 @@ class Command(BaseCommand):
         try:
             load_users_from_xml(users_path)
             load_items_from_xml(items_path)
+            create_admin()
+            load_categories()
             
         except Exception as e:
             raise CommandError(f"Loading Failed: {e}")
