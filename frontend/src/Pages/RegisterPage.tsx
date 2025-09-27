@@ -32,7 +32,7 @@ export function RegisterPage({
 
   const [passwordError, setPasswordError] = useState('');
   const [passwordConfirmError, setPasswordConfirmError] = useState('');
-  const [usernameError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
 
   
   const nav = useNavigate();
@@ -42,10 +42,11 @@ export function RegisterPage({
   }
   
   const handleSubmit = async () => {
-    if (!firstName.trim() || !lastName.trim() || !username.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !phone.trim() || !house_number.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !postal_code.trim())  return;
+    if (!firstName.trim() || !lastName.trim() || !username.trim() || !email.trim() || !password.trim() || !confirmPassword.trim() || !address.trim() || !phone.trim() || !house_number.trim() || !city.trim() || !country.trim() || !region.trim() || !AFM.trim() || !postal_code.trim()) {
+      alert("You left some gap empty")
+      return;
+    } 
     
-    {/* Alerts help to fill the neccesary gaps */}
-
     if (password !== confirmPassword) {
       alert("Passwords don't match!");
       return;
@@ -53,6 +54,11 @@ export function RegisterPage({
 
     if (password.length < 3) {
       alert("Password number must be at least 3 characters long");
+      return;
+    }
+
+    if (usernameList.includes(username)){
+      alert("This Username is already being used");
       return;
     }
 
@@ -69,6 +75,10 @@ export function RegisterPage({
       onRegister(userData); // Just pass true to register regardless of credentials
     }, 1000);
   };
+
+  // backend
+  // fetch all usernames in "usernameList"
+  const usernameList = ['qwer', 'asdf', 'zxxcv', 'stavros'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -97,7 +107,9 @@ export function RegisterPage({
                 id="username"
                 type="text"
                 value={username}
-                onChange={(e) => { setusername(e.target.value)}}
+                onChange={(e) => { setusername(e.target.value); 
+                                   usernameList.includes(e.target.value) ? setUsernameError("This username already exists. Choose onother")
+                                                               : setUsernameError(""); }}
                 className={`w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                   usernameError
                     ? 'border-red-500 focus:ring-red-500 placeholder-red-400' 

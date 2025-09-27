@@ -27,6 +27,19 @@ interface ItemModalProps {
 function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
   if (!isOpen ||!user) return null;
 
+
+  const handleAcceptRequest = () => {
+    // backend
+    // post add as normal user the "user"
+    // remove from here and add them to normal Userlist
+  };
+
+  const handleDeleteRequest = () => {
+    // backend
+    // post delete request
+  };
+
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -89,10 +102,13 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
 
               {/* Action buttons */}
               <div className="space-y-3">
-                <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                  Message User
+                <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                        onClick={handleAcceptRequest}
+                >
+                  Accept User
                 </button>
-                <button className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium">
+                <button className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                        onClick={handleDeleteRequest}>
                   Delete user
                 </button>
               </div>
@@ -113,12 +129,17 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
 
   const nav = useNavigate();
 
-  const navigate = () => {
+  const navigateUserlist = () => {
     nav('/admin')
   };
   
+  const navigateEbay = () => {
+    nav('/ebay')
+  };
+  
+
   const navigateChat = () => {
-        nav('/chat')
+        nav('/chatIn')
     };
   // const handleSearch = () => {
   //   console.log("Searching for:", searchQuery);
@@ -141,7 +162,8 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
     setSelectedProduct(null);
   };
 
-  
+  //backend 
+  // fetch all request as "user"
   const users = [
     {
       id: 1,
@@ -210,6 +232,9 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
   ];
 
 
+  // backend
+  // fetsch unread
+  const unread = 3;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -226,15 +251,24 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
               {/* Requests Button */}
               <button
                   onClick={navigateChat}
-                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                  className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                   Msgs
+                  {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                    {unread}
+                  </span>)}
               </button>
               <button
-                onClick={navigate}
+                onClick={navigateUserlist}
                 className="relative bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Userlist
+              </button>
+              <button
+                onClick={navigateEbay}
+                className="bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-200"
+              >
+                Ebay
               </button>
               
               {/* Logout Button */}

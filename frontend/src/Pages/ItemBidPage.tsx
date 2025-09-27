@@ -46,7 +46,7 @@ interface Bidder {
 
 
 
-export function ItemBidPage({ onLogout } : { onLogout: () => void;}){
+export function ItemBidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: () => void;}){
     const { productId } = useParams<{ productId: string }>();
     const [searchQuery, setSearchQuery] = useState("");
     const nav = useNavigate();
@@ -58,6 +58,19 @@ export function ItemBidPage({ onLogout } : { onLogout: () => void;}){
     const navigateMyBids = () => {
         nav('/mybids')
     };
+
+    const navigateEbay = () => {
+        nav('/ebay')
+    };
+
+    const navigateChat = () => {
+        nav('/chatIn')
+    };
+
+    const navigateUserlist = () => {
+        nav('/admin')
+    };
+
 
     const handleSearch = () => {
         console.log("Searching for:", searchQuery);
@@ -116,6 +129,12 @@ export function ItemBidPage({ onLogout } : { onLogout: () => void;}){
 
     ];
 
+    
+  // backend
+  // fetch unread 
+  const unread = 3;
+
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
@@ -151,6 +170,32 @@ export function ItemBidPage({ onLogout } : { onLogout: () => void;}){
                         </div>
 
                         <div className="flex items-center gap-4">
+
+                            <button
+                                onClick={navigateChat}
+                                className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                            >
+                                Msgs
+                                {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {unread}
+                                </span>)}
+                            </button>
+
+                            {/* userlist Button */}
+                            {isAdmin && (<button
+                                onClick={navigateUserlist}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Userlist
+                            </button>)}
+
+                            {/* Sell Button */}
+                            <button
+                                onClick={navigateEbay}
+                                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+                            >
+                                Ebay
+                            </button>
 
                             {/* Logout Button */}
                             <button
