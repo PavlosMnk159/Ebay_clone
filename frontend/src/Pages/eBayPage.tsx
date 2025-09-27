@@ -1,7 +1,9 @@
 import fetch_with_auth from "@/Authentication/axios";
+import fetch_with_auth from "@/Authentication/axios";
 import { fetch_get } from "@/config/url";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
+
 
 declare global {
   interface Window {
@@ -214,13 +216,45 @@ interface BidOfferModalProps {
     isOpen: boolean;
     onClose: () => void;
     onDataChange?: () => Promise<void>; // Add this
+    onDataChange?: () => Promise<void>; // Add this
 }
 
 function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOfferModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOfferModalProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen || !product) return null;
+    if (!isOpen || !product) return null;
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            // Handle offer submission logic
+            console.log('Processing offer for:', product.name);
+            
+            // API call for making offer
+            const request_data = {
+                item_id: product.id,
+                amount: amount
+            };
+            
+            try {
+                const res = await fetch_with_auth.post('make-offer', request_data);
+                console.log(res.data);
+                alert('Offer submitted successfully!');
+                
+                // Refresh data after successful operation
+                if (onDataChange) {
+                    await onDataChange();
+                }
+            } catch (e: any) {
+                console.log("Could not submit offer", e.message);
+                alert('Failed to submit offer. Please try again.');
+            }
+            
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -252,9 +286,13 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
             onClose();
         } finally {
             setIsSubmitting(false);
+            setIsSubmitting(false);
         }
     };
 
+    const modalTitle = 'Confirm Offer';
+    const buttonText = 'Confirm Offer';
+    const buttonColor = 'bg-orange-500 hover:bg-orange-600';
     const modalTitle = 'Confirm Offer';
     const buttonText = 'Confirm Offer';
     const buttonColor = 'bg-orange-500 hover:bg-orange-600';
@@ -263,12 +301,18 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
             <div className="bg-white rounded-lg max-w-md w-full mx-4" 
             onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-lg max-w-md w-full mx-4" 
+            onClick={(e) => e.stopPropagation()}>
                 <div className="p-6">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
                     {/* Header */}
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
                         <button
                             onClick={onClose}
+                            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                         >
                             ×
@@ -593,6 +637,16 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
                                 </p>
                             </div>
                         )}
+                        )}
+
+                        {mode === 'buy' && (
+                            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-gray-700">
+                                    You are about to purchase this item for <strong>{product.Buy_Price}</strong>. 
+                                    You will be redirected to complete payment.
+                                </p>
+                            </div>
+                        )}
 
                         {/* Action Buttons */}
                         <div className="flex space-x-3">
@@ -600,14 +654,22 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
                                 type="button"
                                 onClick={onClose}
                                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
+                                Cancel
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmitting || (mode === 'offer' && !offerAmount.trim())}
                                 className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
+                                type="submit"
+                                disabled={isSubmitting || (mode === 'offer' && !offerAmount.trim())}
+                                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
+                                {isSubmitting ? 'Processing...' : buttonText}
                                 {isSubmitting ? 'Processing...' : buttonText}
                             </button>
                         </div>
@@ -628,6 +690,7 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
         
     );
 }
+
 
 
 interface ItemModalProps {
@@ -909,6 +972,10 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
 
+    const [purchaseProduct, setPurchaseProduct] = useState<Product | null>(null);
+    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
+
     // const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<String[]>([]);
     const [filters, setFilters] = useState<Filters>({});
@@ -978,7 +1045,10 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         nav('/admin');
     };
 
+ 
+
     const navigateChat = () => {
+        nav('/chatIn')
         nav('/chatIn')
     };
 
@@ -1005,10 +1075,15 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         if (e.key === "Enter"){
             e.preventDefault();
             // applyFilters();
+            // applyFilters();
         }
     };
 
     const handleProductClick = (product: Product) => {
+        if (purchaseProduct != product) {
+            setSelectedProduct(product);
+            setIsModalOpen(true);
+        }
         if (purchaseProduct != product) {
             setSelectedProduct(product);
             setIsModalOpen(true);
@@ -1018,6 +1093,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedProduct(null);
+        refreshData();
         refreshData();
     };
 
@@ -1260,6 +1336,7 @@ const products = [
 
                                 <button
                                     // onClick={applyFilters}
+                                    // onClick={applyFilters}
                                     className="bg-blue-600 text-white px-6 py-2 rounded-r-lg hover:bg-blue-700 transition-colors"
                                 >
                                     Search
@@ -1442,7 +1519,10 @@ const products = [
                                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm"
                                         onClick={async (e) => {
                                             e.preventDefault();
+                                        onClick={async (e) => {
+                                            e.preventDefault();
                                             e.stopPropagation();
+                                            openPurchaseModal(product, 'buy');
                                             openPurchaseModal(product, 'buy');
                                         }}
                                     >
@@ -1524,7 +1604,18 @@ const products = [
                 onClose={closePurchaseModal}
                 mode={purchaseMode}
                 onDataChange={refreshData} // Pass the refresh function
+                onDataChange={refreshData} // Pass the refresh function
             />
+
+            {/* Purchase Modal with refresh callback */}
+            <PurchaseModal
+                product={purchaseProduct}
+                isOpen={isPurchaseModalOpen}
+                onClose={closePurchaseModal}
+                mode={purchaseMode}
+                onDataChange={refreshData} // Pass the refresh function
+            />
+
 
         </div>
     );

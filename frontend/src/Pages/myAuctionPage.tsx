@@ -445,6 +445,7 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
 
     const navigateChat = () => {
         nav('/chatIn')
+        nav('/chatIn')
     };
 
     const navigateMakeAuction = () => {

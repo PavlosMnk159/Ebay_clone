@@ -22,6 +22,8 @@ import { BidPage } from './Pages/myBidPage.tsx'
 import { AdminPage } from './Pages/AdminPage.tsx';
 import { RequestPage } from './Pages/RequestsPage.tsx';
 
+// this is a comment
+
 import { ChatOutPage } from './Pages/ChatOutPage.tsx';
 import { ChatInPage } from "./Pages/ChatInPage.tsx";
 
