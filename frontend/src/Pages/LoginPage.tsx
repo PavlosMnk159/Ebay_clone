@@ -6,11 +6,11 @@ import { useNavigate } from "react-router";
 export function LoginPage({ 
   
   onLogin,
-
+  onGuest
   }: { 
 
   onLogin: (data: LoginFormData) => void;
-  onAdmin: (data: LoginFormData) => void;
+  onGuest: () => void;
 }) 
 
 {
@@ -23,9 +23,7 @@ export function LoginPage({
   const navigate= ()=>{
       nav('/register')
   }
-  const navigatetGuest= ()=>{
-      nav('/badebay')
-  }
+
 
 
   const handleSubmit = async () => {
@@ -52,7 +50,7 @@ export function LoginPage({
               <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold">TOTTALLY NOT eBay</h1>
+          <h1 className="text-2xl font-bold">Welcome to TOTTALLY NOT eBay</h1>
           <p className="text-blue-100 mt-2">Sign in to access APP</p>
         </div>
 
@@ -110,7 +108,7 @@ export function LoginPage({
 
 
             <button
-              onClick={navigatetGuest}
+              onClick={onGuest}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
             "Sign In as Guest"
@@ -121,9 +119,6 @@ export function LoginPage({
 
           {/* Additional Links */}
           <div className="mt-6 text-center space-y-2">
-            <a href="#" className="text-blue-600 hover:text-blue-800 text-sm">
-              Forgot your password?
-            </a>
             <div className="text-gray-500 text-sm">
               Don't have an account? 
               <button 

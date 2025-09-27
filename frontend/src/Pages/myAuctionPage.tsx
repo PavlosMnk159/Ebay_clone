@@ -29,7 +29,7 @@ interface Product {
     Number_of_Bids: number;
     Bids: Bid[] | null;
     started: string;
-    ends: string;
+    ends: number;
     time_left: string;
     seller: {
         sellerId: string,
@@ -59,6 +59,12 @@ interface EditAuctionModalProps {
     onSave: (updatedProduct: Product) => void;
 }
 
+interface DeleteAuctionModalProps {
+    product: Product | null;
+    isOpen: boolean;
+    onDelete: (deleteProduct: Product) => void;
+    onClose: () => void;
+}
 
 function ItemModal({ product, isOpen, onClose } : ItemModalProps) {
     if (!isOpen || !product) return null;
@@ -178,6 +184,7 @@ function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionMod
             onSave(editedProduct);
             setEditedProduct(null);
         }
+
     };
 
     const handleCancel = () => {
@@ -350,12 +357,11 @@ function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionMod
 }
 
 
-function DeleteModal({ product, isOpen, onClose } : ItemModalProps) {
+function DeleteModal({ product, isOpen, onDelete, onClose } : DeleteAuctionModalProps) {
     if (!isOpen || !product) return null;
 
     const handleDeleteProduct = () =>{
-        //somtething something
-        onClose();
+        onDelete(product);
     }
 
     return (
@@ -404,7 +410,7 @@ function DeleteModal({ product, isOpen, onClose } : ItemModalProps) {
     );
 }
 
-export function AuctionPage({ onLogout } : { onLogout: () => void;}){
+export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: () => void;}){
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -439,11 +445,18 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
 
     const navigateChat = () => {
         nav('/chatIn')
+        nav('/chatIn')
     };
 
     const navigateMakeAuction = () => {
         nav('/makeAuction')
     };
+
+    const navigateUserlist = () => {
+        nav('/admin')
+    };
+
+
 
     const naviageteMyBids = () => {
         nav('/mybids')
@@ -454,7 +467,15 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
     };
  
     const handleActivation = (product: Product) => {
-        product.isActive = 1;
+        // // take currTime
+        // const currTime = 27092025;
+        // if (product.ends < currTime){
+        //     alert("End time is not correct. Please change it before starting the Auction!");
+        // }else{
+        //     // backend
+        //     // post to isActive
+            product.isActive = 1;
+        // }
     };
 
 
@@ -470,26 +491,46 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
         }
     };
 
-    const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setIsEditModalOpen(true);
+
+
+    {/* Edit Modal */}
+    const handleOpenEditModal = (product: Product) => {
+        setEditingProduct(product);
+        setIsEditModalOpen(true);
     };
 
     const handleCloseEditModal = () => {
-        setIsEditModalOpen(false);
         setEditingProduct(null);
+        setIsEditModalOpen(false);
     };
 
-    const handleDeleteProduct = (product: Product) => {
-    setDeletingProduct(product);
-    setIsDeleteModalOpen(true);
+    const handleSaveEditModal = (product : Product) => {
+        // Backend
+        // post updated Item
+        alert(product.Buy_Price);
+        handleCloseEditModal();
+    };
+
+
+
+    {/* Delete Modal */}
+    const handleOpenDeleteModal = (product: Product) => {
+        setDeletingProduct(product)
+        setIsDeleteModalOpen(true);
     };
 
     const handleCloseDeleteModal = () => {
+        setDeletingProduct(null)
         setIsDeleteModalOpen(false);
-        setDeletingProduct(null);
     };
 
+    const handleDeleteProduct = (product: Product) => {
+        // Backend
+        // post delete Item
+        
+        alert(product.Buy_Price);
+        handleCloseDeleteModal();
+    };
 
     
 
@@ -503,8 +544,9 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
         setSelectedProduct(null);
     };
 
-    // const products_real = await fetch_get('/items');
-    // console.log(products1);
+
+    // const products = await fetch_get('/items');
+    // console.log(products);
     // const products = [
     //     {
     //     id: 1,
@@ -528,7 +570,8 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
     //         lng: -74.0060,
     //     },
     //     city: "New York, NY",
-    //     isActive: 1
+    //     isActive: 1,
+    //     isBought: 0
     //     },  {
     //     id: 2,
     //     name: "Active",
@@ -551,6 +594,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
     //         lng: -74.0060,
     //     },
     //     city: "New York, NY",
+    //     isBought: 0,
     //     isActive: 1
 
     //     }, {
@@ -575,11 +619,17 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
     //         lng: -74.0060,
     //     },
     //     city: "New York, NY",
+    //     isBought: 0,
     //     isActive: 0
 
     //     }
         
     // ];
+
+  // backend
+  // fetch unread 
+  const unread = 3;
+
 
 
     return (
@@ -620,16 +670,21 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
                             {/* Message Button */}
                             <button
                                 onClick={navigateChat}
-                                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                                className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
-                                {/* backend. fetch minimata
-                                 {users.length > 0 && ( 
-                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                                    {/* {users.length}
-                                </span> 
-                                // )} */}
+                                {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {unread}
+                                </span>)}
                             </button>
+
+                            {/* userlist Button */}
+                            {isAdmin && (<button
+                                onClick={navigateUserlist}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Userlist
+                            </button>)}
 
                             {/* Sell Button */}
                             <button
@@ -638,7 +693,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
                             >
                                 Ebay
                             </button>
-
+                            
                             {/* Logout Button */}
                             <button
                                 onClick={onLogout}
@@ -728,7 +783,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
                                     className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleEditProduct(product);
+                                        handleOpenEditModal(product);
                                     }}
                                 >
                                     Edit Acution
@@ -739,7 +794,7 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
                                     className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors text-sm"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDeleteProduct(product);
+                                        handleOpenDeleteModal(product);
                                         console.log("Buy it now clicked for:", product.name);
                                     }}
                                 >
@@ -762,15 +817,12 @@ export function AuctionPage({ onLogout } : { onLogout: () => void;}){
                 product={editingProduct}
                 isOpen={isEditModalOpen}
                 onClose={handleCloseEditModal}
-                onSave={(updatedProduct) => {
-                    // Update your products array here
-                    console.log("Updated product:", updatedProduct);
-                    handleCloseEditModal();
-                    }}
+                onSave={handleSaveEditModal}
             />
             <DeleteModal
                 product={deletingProduct}
                 isOpen={isDeleteModalOpen}
+                onDelete={handleDeleteProduct}
                 onClose={handleCloseDeleteModal}
             />
 

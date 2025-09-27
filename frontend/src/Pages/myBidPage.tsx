@@ -136,7 +136,7 @@ function ItemModal({ product, isOpen, onClose } : ItemModalProps) {
 }
 
 
-export function BidPage({ onLogout } : { onLogout: () => void;}){
+export function BidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: () => void;}){
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -149,6 +149,10 @@ export function BidPage({ onLogout } : { onLogout: () => void;}){
 
     const navigateChat = () => {
         nav('/chatIn')
+    };
+
+    const navigateUserlist = () => {
+        nav('/admin')
     };
     
     const navigateEbay = () => {
@@ -175,6 +179,9 @@ export function BidPage({ onLogout } : { onLogout: () => void;}){
         setIsModalOpen(false);
         setSelectedProduct(null);
     };
+
+    // backend
+    // fetct ta products pou exoyn kai emena san bidder
 
 const products = [
     {
@@ -257,6 +264,11 @@ const products = [
 
 
 
+  // backend
+  // fetch unread 
+  const unread = 3;
+
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
@@ -295,16 +307,21 @@ const products = [
                             {/* Message Button */}
                             <button
                                 onClick={navigateChat}
-                                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                                className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
-                                {/* backend. fetch minimata
-                                 {users.length > 0 && ( 
-                                // <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                                    {/* {users.length}
-                                </span> 
-                                // )} */}
+                                {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                    {unread}
+                                </span>)}
                             </button>
+
+                            {/* userlist Button */}
+                            {isAdmin && (<button
+                                onClick={navigateUserlist}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Userlist
+                            </button>)}
 
                             {/* Sell Button */}
                             <button

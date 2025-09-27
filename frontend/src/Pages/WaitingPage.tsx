@@ -1,6 +1,6 @@
 
 
-export function SellPage({ onLogout }: { onLogout: () => void; }) {
+export function WaitingPage({ onLogout }: { onLogout: () => void; }) {
 // export function WaitingPage({ onLogout }: { onLogout: () => void; }) {
 
     // Reset file input
