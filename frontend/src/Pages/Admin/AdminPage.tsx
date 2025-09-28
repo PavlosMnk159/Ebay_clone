@@ -119,6 +119,7 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [countRequests, setCountRequests] = useState(0);
+  const [unread, setUnread] = useState(0);
   
   
   const nav = useNavigate();
@@ -146,6 +147,29 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
   };
 
 
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    const fetch_unread = async () => {
+      try {
+          const res = await fetch_with_auth.get('/unread_messages/');
+          const data = res.data
+          
+          setUnread(data.unread_count);
+          console.log("this is the unreads");
+          console.log(data.unread_count);
+
+      } catch (error) {
+          console.log("Error while fetching products: ", error);
+      }
+        
+    }
+
+    fetch_unread();
+    interval = setInterval(fetch_unread, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+
 
   useEffect(() => {
     // Cleanup fnction to properly destroy existing map
@@ -167,10 +191,6 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
   }, []);
   
 
-  //backend
-  // messeges
-  const unread = 3;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -189,7 +209,7 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
                   className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                   Msgs
-                  {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                  {(<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
                     {unread}
                   </span>)}
               </button>

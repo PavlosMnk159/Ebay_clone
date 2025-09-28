@@ -1,6 +1,7 @@
 import fetch_with_auth from "@/Authentication/axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { fetch_get, BASE_URL } from "@/config/url";
 
 
 interface Bid {
@@ -22,7 +23,7 @@ interface Bidder {
 interface Product {
     id: number;
     name: string;
-    category: string;
+    categories: string[];
     currently: number;
     Buy_Price: number;
     First_Bid:number;
@@ -42,9 +43,79 @@ interface Product {
         lng: number
     };
     city: string;
+    country: string;
+    images: string[];
     isActive: number;
 
 }
+
+interface EditProduct {
+    id: number;
+    name: string;
+    categories: string[];
+    currently: number;
+    Buy_Price: number;
+    First_Bid: number;
+    Number_of_Bids: number;
+    Bids: Bid[] | null;
+    started: string;
+    ends: number;
+    seller: {
+        sellerId: string,
+        rating: string
+    };
+    description: string;
+    images: File[]; 
+    city: string;
+    country: string;
+    location : {
+        lat : number;
+        lng : number;
+    }
+    isActive: number;
+}
+
+
+// Helper function to convert a URL/path to a File object
+async function urlToFile(url: string, filename: string): Promise<File> {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new File([blob], filename, { type: blob.type });
+    } catch (error) {
+        console.error(`Failed to convert ${url} to File:`, error);
+        throw error;
+    }
+}
+// Helper function to convert Product to EditProduct
+async function productToEditProduct(product: Product, BASE_URL: string): Promise<EditProduct> {
+  try {
+    // Handle null or empty images array
+    const imageFiles: File[] = product.images && product.images.length > 0 
+      ? await Promise.all(
+          product.images.map(async (imageName: string) => {
+            const imageUrl = `${BASE_URL}/${imageName}`;
+            return await urlToFile(imageUrl, imageName);
+          })
+        )
+      : [];
+
+    return {
+      ...product,
+      categories: product.categories ?? [],
+      images: imageFiles,
+    };
+  } catch (error) {
+    console.error('Failed to convert product images to files:', error);
+    // Return with empty images array if conversion fails
+    return {
+      ...product,
+      categories: product.categories ?? [],  
+      images: [],
+    };
+  }
+}
+
 
 interface ItemModalProps  {
     product: Product | null;
@@ -56,7 +127,7 @@ interface EditAuctionModalProps {
     product: Product | null;
     isOpen: boolean;
     onClose: () => void;
-    onSave: (updatedProduct: Product) => void;
+    onSave: (updatedProduct: EditProduct) => void;
 }
 
 interface DeleteAuctionModalProps {
@@ -66,108 +137,204 @@ interface DeleteAuctionModalProps {
     onClose: () => void;
 }
 
-function ItemModal({ product, isOpen, onClose } : ItemModalProps) {
+
+function ItemModal({product, isOpen, onClose }: ItemModalProps) {
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0); 
+    
+   
+
     if (!isOpen || !product) return null;
 
+    // Check if product has the images property, if not, handle gracefully
+    const productImages = product.images ? product.images : "No image";
+
+
+    const nextImage = () => {
+        if (productImages.length > 1) {
+            setSelectedImageIndex((prev) => (prev + 1) % productImages.length);
+        }
+    };
+
+    const prevImage = () => {
+        if (productImages.length > 1) {
+            setSelectedImageIndex((prev) => (prev - 1 + productImages.length) % productImages.length);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}> 
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                    {/* Header with close button */}
-                    <div className="flex justify-between items-start mb-4">
-                        <h2 className="text-2xl font-bold text-gray-800 pr-4">{product.name}</h2>
-
-                        <button
-                            onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-                        >
-
-                        </button>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                        {/* Left column - Image and basic info */}
-                        <div>
-                            <div className="text-8xl text-center mb-4 bg-gray-50 py-8 rounded-lg">
-                                {product.image}
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="text-3xl font-bold text-green-600">Current best bid: {product.currently}</div>
-                                <div className="text-sm text-gray-600">Seller: <span className="font-medium text-blue-600">{product.seller.sellerId}</span>
-                                    <span className="text-green-600 ml-2">({product.seller.rating} positive)</span>
-                                </div>
-                                <div className="flex justify-between">
-                                        <span className="text-gray-600">Category:</span>
-                                        <span className="font-medium">{product.category}</span>
-                                </div>
-                            </div>
+        <>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}> 
+                <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="p-6">
+                        {/* Header with close button */}
+                        <div className="flex justify-between items-start mb-4">
+                            <h2 className="text-2xl font-bold text-gray-800 pr-4">{product.name}</h2>
+                            <button
+                                onClick={onClose}
+                                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                            >
+                                ×
+                            </button>
                         </div>
 
-                        {/* Right column - Details and actions */}
-                        <div>
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-gray-800 mb-2">Description</h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">
-                                    {product.description || "Here is empty space and should be filled with words. Thus I am placing words in this empty space to keep it not empty."}
-                                </p>
-                            </div>
-
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-gray-800 mb-2">Item Details</h3>
-                                <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Item ID:</span>
-                                        <span className="font-medium">#{product.id.toString().padStart(6, '0')}</span>
-                                    </div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {/* Left column - Image and basic info */}
+                            <div>
+                                {/* Image display */}
+                                <div className="relative h-64 w-full mb-4 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+                                    {product.images && product.images.length > 0 ? (
+                                        <>
+                                        <img 
+                                        
+                                            src={`${BASE_URL}/${product.images[selectedImageIndex]}`} 
+                                            alt={`${product.name} - Image ${selectedImageIndex + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                            // Replace with fallback letter on error
+                                            const target = e.currentTarget;
+                                            const parent = target.parentElement;
+                                            if (parent) {
+                                                parent.innerHTML = "No Image";
+                                            }
+                                        }}
+                                          
+                                        />
+                                        {/* Navigation arrows for multiple images */}
+                                        {product.images.length > 1 && (
+                                            <>
+                                            <button
+                                                onClick={prevImage}
+                                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                                            >
+                                                ←
+                                            </button>
+                                            <button
+                                                onClick={nextImage}
+                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                                            >
+                                                →
+                                            </button>
+                                            {/* Image counter */}
+                                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-sm px-3 py-1 rounded-full">
+                                                {selectedImageIndex + 1} / {product.images.length}
+                                            </div>
+                                            </>
+                                        )}
+                                        </>
+                                    ) : "No Image"}
                                     
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Number of bids:</span>
-                                        <span className="font-medium">{product.Number_of_Bids}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">First bid:</span>
-                                        <span className="font-medium">{product.First_Bid}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Buy price:</span>
-                                        <span className="font-medium">{product.Buy_Price}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Started on:</span>
-                                        <span className="font-medium">{product.started}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Ends on:</span>
-                                        <span className="font-medium">{product.ends}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Time left:</span>
-                                        <span className="font-medium">{product.time_left}</span>
-                                    </div>
-
                                 </div>
+
+                                <div className="space-y-2">
+                                    {product.Buy_Price && (<div className="text-2xl font-bold text-green-600">Buy It Now for: {product.Buy_Price}</div>)}
+                                    <div className="text-2xl font-bold text-green-600">Current best bid: {product.currently}</div>
+                                    <div className="text-sm text-gray-600">Seller: <span className="font-medium text-blue-600">{product.seller.sellerId}</span>
+                                        <span className="text-green-600 ml-2">({product.seller.rating} positive)</span>
+                                    </div>
+                                    <div className="text-sm text-gray-600">Location: <span className="font-medium">{product.city}, {product.country}</span></div>
+                                    <div className="text-sm text-gray-600">Coordinates: <span className="font-medium">{product.location.lat}, {product.location.lng}</span></div>
+                                </div>
+
+                                
                             </div>
 
+                            {/* Right column - Details and actions */}
+                            <div>
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-2">Description</h3>
+                                    <p className="text-gray-600 text-sm leading-relaxed">
+                                        {product.description || "Here is empty space and should be filled with words. Thus I am placing words in this empty space to keep it not empty."}
+                                    </p>
+                                </div>
 
-                            {/* Action buttons 
-                            bale edw buttons an 8es
-                            otan ebala ola katastrafikan*/}
-                            
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-2">Item Details</h3>
+                                    <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Item ID:</span>
+                                            <span className="font-medium">#{product.id.toString().padStart(6, '0')}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            {product.categories && (<span className="text-gray-600">categories:</span>)}
+                                            <span className="font-medium">{product.categories}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Images:</span>
+                                            <span className="font-medium">{productImages.length}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-2">Seller Information</h3>
+                                    <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                                        <div className="flex justify-between mb-1">
+                                            <span className="text-gray-600">Feedback Score:</span>
+                                            <span className="font-medium text-green-600">{product.seller.rating}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
 
-function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionModalProps) {
-    const [editedProduct, setEditedProduct] = useState<Product | null>(null);
+function EditAuctionModal ({ product, isOpen, onClose, onSave} : EditAuctionModalProps) {
+    const [editedProduct, setEditedProduct] = useState<EditProduct | null>(null);
+    const [categories, setCategories] = useState<string[]>([]);
 
-    if (isOpen && product && !editedProduct) {
-        setEditedProduct({ ...product });
+  useEffect(() => {
+    if (isOpen && product) {
+      productToEditProduct(product, BASE_URL)
+        .then(convertedProduct => {
+          setEditedProduct(convertedProduct);
+        })
+        .catch(error => {
+          console.error('Failed to convert product:', error);
+          // Fallback: create EditProduct with empty images
+          setEditedProduct({
+            id: product.id,
+            name: product.name,
+            categories: [],
+            currently: product.currently,
+            Buy_Price: product.Buy_Price,
+            First_Bid: product.First_Bid,
+            Number_of_Bids: product.Number_of_Bids,
+            Bids: product.Bids,
+            started: product.started,
+            ends: product.ends,
+            seller: product.seller,
+            description: product.description,
+            images: [], // Empty array as fallback
+            city: product.city,
+            country: product.country,
+            location: product.location,
+            isActive: product.isActive
+          });
+        });
     }
+  }, [isOpen, product]);
+
+      useEffect(() => {
+    
+          const fetch_categories = async () => {
+              try {
+                  const data = await fetch_get('/categories');
+                  setCategories(data);
+                  console.log(data);
+              } catch (error) {
+                  console.log("Error while fetching categories: ", error);
+              }
+          }
+    
+          fetch_categories();
+      }, []);
 
     // Reset when modal closes
     if (!isOpen && editedProduct) {
@@ -175,22 +342,40 @@ function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionMod
     }
     if (!isOpen || !product|| !editedProduct) return null;
 
-    const handleInputChange = (field: keyof Product, value: string | number) => {
-        setEditedProduct(prev => prev ? { ...prev, [field]: value } : null);
+     const handleInputChange = (field: string, value: number | string | string[] | File[] | null) => {
+        setEditedProduct(prev => prev ? ({ ...prev, [field]: value }) : null);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (editedProduct) {
+            
             onSave(editedProduct);
             setEditedProduct(null);
         }
-
     };
 
     const handleCancel = () => {
         setEditedProduct(null);
         onClose();
     };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    // Add new files to existing images instead of replacing them
+    handleInputChange('images', [...editedProduct.images, ...files]);
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    const updatedImages = editedProduct.images.filter((_, index) => index !== indexToRemove);
+    handleInputChange('images', updatedImages);
+  };
+
+  const clearAllImages = () => {
+    handleInputChange('images', []);
+    // Reset file input
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  };
 
    
     return (
@@ -211,10 +396,6 @@ function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionMod
                     <div className="grid md:grid-cols-2 gap-6">
                         {/* Left column - Image and basic info */}
                         <div>
-                            <div className="text-8xl text-center mb-4 bg-gray-50 py-8 rounded-lg">
-                                {editedProduct.image}
-                            </div>
-
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -229,28 +410,141 @@ function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionMod
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Category
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                        Category *
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={editedProduct.category}
-                                        onChange={(e) => handleInputChange('category', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                    <div className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <div className="text-lg text-gray-700 mb-3">Select categories:</div>
+                                    <div className="max-h-48 overflow-y-auto">
+                                        {categories
+                                            .filter(cat => cat.toLowerCase() !== "none")
+                                            .map((cat, index) => (
+                                            <label
+                                                key={index}
+                                                className="flex items-center mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                                            >
+                                                <input
+                                                type="radio"
+                                                name="category" // same name for all radios ensures only one is selected
+                                                value={cat}
+                                                checked={editedProduct.categories[0] === cat} // single category stored at index 0
+                                                onChange={() => handleInputChange('categories', [cat])} // replace with selected category
+                                                className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                                />
+                                                <span className="text-lg">{cat}</span>
+                                            </label>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Image (Emoji)
+                                    <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                        Item Images (Optional) - {editedProduct.images.length} uploaded
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={editedProduct.image}
-                                        onChange={(e) => handleInputChange('image', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="📚"
-                                    />
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                                        <input
+                                        id="image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleImageUpload}
+                                        className="hidden"
+                                        />
+                                        
+                                        {editedProduct.images.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {/* Image Grid Display */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {editedProduct.images.map((file, index) => (
+                                                <div key={index} className="relative group">
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt={`Preview ${index + 1}`}
+                                                    className="w-full h-32 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                    title="Remove this image"
+                                                >
+                                                    ×
+                                                </button>
+                                                <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                                    {index + 1}
+                                                </div>
+                                                </div>
+                                            ))}
+                                            </div>
+                                            
+                                            {/* Action Buttons */}
+                                            <div className="flex gap-3 justify-center flex-wrap">
+                                            <label
+                                                htmlFor="image-upload"
+                                                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer inline-flex items-center gap-2"
+                                            >
+                                                <span>📷</span>
+                                                Add More Images
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={clearAllImages}
+                                                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors inline-flex items-center gap-2"
+                                            >
+                                                <span>🗑️</span>
+                                                Clear All Images
+                                            </button>
+                                            </div>
+                                            
+                                            {/* Images Info */}
+                                            <div className="bg-blue-50 p-3 rounded-lg">
+                                            <p className="text-sm text-blue-700">
+                                                ✅ {editedProduct.images.length} image{editedProduct.images.length !== 1 ? 's' : ''} uploaded
+                                                {editedProduct.images.length > 0 && (
+                                                <span className="ml-2">
+                                                    ({(editedProduct.images.reduce((total, file) => total + file.size, 0) / 1024 / 1024).toFixed(1)} MB total)
+                                                </span>
+                                                )}
+                                            </p>
+                                            </div>
+                                        </div>
+                                        ) : (
+                                        <div className="space-y-4">
+                                            <div className="text-4xl text-gray-400">📷</div>
+                                            <div>
+                                            <label
+                                                htmlFor="image-upload"
+                                                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer inline-block font-medium"
+                                            >
+                                                Choose Images
+                                            </label>
+                                            </div>
+                                            <p className="text-sm text-gray-500">
+                                            Upload clear photos of your item to attract more bidders
+                                            <br />
+                                            You can select multiple images at once
+                                            </p>
+                                        </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="mt-3 space-y-1">
+                                        <p className="text-sm text-gray-500">
+                                        • Supported formats: JPG, PNG, GIF
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                        • Max file size per image: 5MB
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                        • You can add as many images as you want
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                        • Click "Add More Images" to upload additional photos
+                                        </p>
+                                    </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -273,19 +567,6 @@ function EditAuctionModal ({ product, isOpen, onClose, onSave } : EditAuctionMod
                             <div className="mb-6">
                                 <h3 className="font-semibold text-gray-800 mb-3">Pricing Details</h3>
                                 <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            First Bid ($)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={editedProduct.First_Bid}
-                                            onChange={(e) => handleInputChange('First_Bid', parseFloat(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            min="0"
-                                            step="0.01"
-                                        />
-                                    </div>
                                     
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -423,7 +704,35 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
 
     const [products, setProducts] = useState<Product[]>([]);
 
+    const [unread, setUnread] = useState(0);
+
+
+    const refreshData = async () => {
+        try {
+            const res = await fetch_with_auth('/my_items/');
+            const data = res.data;
+            setProducts(data);
+        } catch (error) {
+            console.log("Error while refreshing data: ", error);
+        }
+    };
+
+
     useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+        const fetch_unread = async () => {
+            try {
+                const res = await fetch_with_auth.get('/unread_messages/');
+                const data = res.data
+                
+                setUnread(data.unread_count);
+
+            } catch (error) {
+                console.log("Error while fetching products: ", error);
+            }
+            
+        }
+
         const fetch_products = async () => {
             try {
                 const res = await fetch_with_auth.get('/my_items/');
@@ -435,6 +744,9 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
         }
 
         fetch_products();
+        fetch_unread();
+        interval = setInterval(fetch_unread, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     const nav = useNavigate();
@@ -466,16 +778,12 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
         nav('/itembids/' + product.id.toString())
     };
  
-    const handleActivation = (product: Product) => {
-        // // take currTime
-        // const currTime = 27092025;
-        // if (product.ends < currTime){
-        //     alert("End time is not correct. Please change it before starting the Auction!");
-        // }else{
-        //     // backend
-        //     // post to isActive
-            product.isActive = 1;
-        // }
+    const handleStartAcution = async (product: Product) => {
+        product.isActive = 1;
+        await fetch_with_auth.post('start_auction/', {
+            'id': product.id
+        })
+        refreshData();
     };
 
 
@@ -504,12 +812,45 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
         setIsEditModalOpen(false);
     };
 
-    const handleSaveEditModal = (product : Product) => {
-        // Backend
-        // post updated Item
-        alert(product.Buy_Price);
-        handleCloseEditModal();
-    };
+const handleSaveEditModal = async (editedProduct: EditProduct) => {
+  const formData = new FormData();
+
+  // Required fields (always convert to string safely)
+  formData.append("id", String(editedProduct.id ?? ""));
+  formData.append("name", editedProduct.name ?? "");
+  formData.append("description", editedProduct.description ?? "");
+  formData.append("currently", String(editedProduct.currently ?? ""));
+  formData.append("buy_price", String(editedProduct.Buy_Price ?? ""));
+  formData.append("first_bid", String(editedProduct.First_Bid ?? ""));
+  formData.append("number_of_bids", String(editedProduct.Number_of_Bids ?? ""));
+  formData.append("started", editedProduct.started ?? "");
+  formData.append("ends", String(editedProduct.ends ?? ""));
+
+  // Categories
+  editedProduct.categories?.forEach((cat) => {
+    formData.append("categories", cat ?? "");
+  });
+
+  // Images
+  editedProduct.images?.forEach((file) => {
+    if (file) {
+      formData.append("images", file);
+    }
+  });
+
+  try {
+    const res = await fetch_with_auth.post("edit_item/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const data = res.data;
+    setUnread(data.unread_count);
+  } catch (error) {
+    console.error("Error while editing products:", error);
+  }
+
+  refreshData();
+  handleCloseEditModal();
+};
 
 
 
@@ -524,11 +865,16 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
         setIsDeleteModalOpen(false);
     };
 
-    const handleDeleteProduct = (product: Product) => {
+    const handleDeleteProduct = async (product: Product) => {
         // Backend
         // post delete Item
+        await fetch_with_auth.post('delete_item/', 
+            {
+                item_id: product.id
+            }
+        );
         
-        alert(product.Buy_Price);
+        refreshData();
         handleCloseDeleteModal();
     };
 
@@ -543,92 +889,6 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
         setIsModalOpen(false);
         setSelectedProduct(null);
     };
-
-
-    // const products = await fetch_get('/items');
-    // console.log(products);
-    // const products = [
-    //     {
-    //     id: 1,
-    //     name: "The Great Gatsby - Classic Literature",
-    //     category: "Books",
-    //     currently: 12,
-    //     Buy_Price: 15,
-    //     First_Bid: 10,
-    //     Number_of_Bids: 3,
-    //     Bids: null,
-    //     started: 19092025,
-    //     ends: 20092025,
-    //     seller: {
-    //         sellerId: "BookStore123",
-    //         rating: "98.5%",
-    //     },
-    //     description: "A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.",
-    //     image: "📚",
-    //     location: {
-    //         lat: 40.7128,
-    //         lng: -74.0060,
-    //     },
-    //     city: "New York, NY",
-    //     isActive: 1,
-    //     isBought: 0
-    //     },  {
-    //     id: 2,
-    //     name: "Active",
-    //     category: "Books",
-    //     currently: 10,
-    //     Buy_Price: 15,
-    //     First_Bid: 10,
-    //     Number_of_Bids: 0,
-    //     Bids: null,
-    //     started: 19092025,
-    //     ends: 20092025,
-    //     seller: {
-    //         sellerId: "BookStore123",
-    //         rating: "98.5%",
-    //     },
-    //     description: "Something something",
-    //     image: "📚",
-    //     location: {
-    //         lat: 40.7128,
-    //         lng: -74.0060,
-    //     },
-    //     city: "New York, NY",
-    //     isBought: 0,
-    //     isActive: 1
-
-    //     }, {
-    //     id: 3,
-    //     name: "Not Active",
-    //     category: "Books",
-    //     currently: 10,
-    //     Buy_Price: 15,
-    //     First_Bid: 10,
-    //     Number_of_Bids: 0,
-    //     Bids: null,
-    //     started: 19092025,
-    //     ends: 20092025,
-    //     seller: {
-    //         sellerId: "BookStore123",
-    //         rating: "98.5%",
-    //     },
-    //     description: "Something something",
-    //     image: "📚",
-    //     location: {
-    //         lat: 40.7128,
-    //         lng: -74.0060,
-    //     },
-    //     city: "New York, NY",
-    //     isBought: 0,
-    //     isActive: 0
-
-    //     }
-        
-    // ];
-
-  // backend
-  // fetch unread 
-  const unread = 3;
 
 
 
@@ -673,7 +933,7 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                                 className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
-                                {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                {(<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
                                     {unread}
                                 </span>)}
                             </button>
@@ -749,13 +1009,13 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                                     Number of bids: {product.Number_of_Bids}
                                 </div>
 
-                                <div className="text-sm text-gray-600 mb-3">
+                                {product.First_Bid && (<div className="text-sm text-gray-600 mb-3">
                                     First pirce: {product.First_Bid}
-                                </div>
+                                </div>)}
                                 
-                                <div className="text-sm text-gray-600 mb-3">
+                                {product.Buy_Price && (<div className="text-sm text-gray-600 mb-3">
                                     Buy Pirce: {product.Buy_Price}
-                                </div>
+                                </div>)}
 
                                 <div className="text-sm text-gray-600 mb-3">
                                     Time left: {product.time_left}
@@ -766,7 +1026,7 @@ export function AuctionPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         if (!product.isActive){
-                                            handleActivation(product);
+                                            handleStartAcution(product);
                                         }else{
                                             naviageteItemBids(product);
                                         }

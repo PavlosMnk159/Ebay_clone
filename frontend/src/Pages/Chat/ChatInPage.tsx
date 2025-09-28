@@ -45,6 +45,8 @@ function transformToMailContact(data: SellerData): MailContact {
 export function ChatInPage({ isAdmin, onLogout }: { isAdmin : boolean; onLogout: () => void; }) {
 
     const [mailContacts, setMailContacts] = useState<MailContact[]>([]);
+    const [countRequests, setCountRequests] = useState(0);
+    // const [unread, setUnread] = useState(0);
 
     // fetch buers conversation
 const [mailThreads, setMailThreads] = useState<Record<number, Array<{ 
@@ -127,6 +129,43 @@ const [mailThreads, setMailThreads] = useState<Record<number, Array<{
         return () => clearInterval(interval);
     }, [activeThread]);
 
+    useEffect(() => {
+        // Cleanup fnction to properly destroy existing map
+        const get_users = async() => {
+        try  {
+            const count_result = await fetch_with_auth.get("/request_count/");
+            setCountRequests(count_result.data.unapproved_users);
+            
+        } catch (e) {
+                console.log("Could not fetch user list:", e);
+        }
+        }
+
+        get_users();
+
+    }, []);
+    
+    //     useEffect(() => {
+    //     let interval: ReturnType<typeof setInterval>;
+    //     const fetch_unread = async () => {
+    //         try {
+    //             const res = await fetch_with_auth.get('/unread_messages/');
+    //             const data = res.data
+                
+    //             setUnread(data.unread_count);
+    //             console.log("this is the unreads");
+    //             console.log(data.unread_count);
+
+    //         } catch (error) {
+    //             console.log("Error while fetching products: ", error);
+    //         }
+            
+    //     }
+
+    //     fetch_unread();
+    //     interval = setInterval(fetch_unread, 5000);
+    //     return () => clearInterval(interval);
+    // }, []);
 
     const handleReplay  = async (data : MailContact[]) => {
         setShowCompose(false);
@@ -182,10 +221,22 @@ const [mailThreads, setMailThreads] = useState<Record<number, Array<{
                         </button>
                         {isAdmin && (
                             <button
-                                onClick={navigateUserlist}
-                                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                            onClick={navigateUserlist}
+                            className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
-                                UserList
+                            UserList
+                            {countRequests && (
+                                <span
+                                className="absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center text-xs"
+                                style={{
+                                    width: `${Math.max(24, countRequests.toString().length * 12)}px`,
+                                    height: "24px",
+                                    minWidth: "24px",
+                                }}
+                                >
+                                {countRequests}
+                                </span>
+                            )}
                             </button>
                         )}
                         <button 

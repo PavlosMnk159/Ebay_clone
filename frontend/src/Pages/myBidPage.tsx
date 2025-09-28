@@ -1,4 +1,5 @@
-import { useState } from "react";
+import fetch_with_auth from "@/Authentication/axios";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 
@@ -28,6 +29,7 @@ interface Product {
     currently: number;
     Buy_Price: number;
     First_Bid:number;
+    user_bid:number;
     Number_of_Bids: number;
     Bids: Bid[] | null;
     started: number;
@@ -44,10 +46,7 @@ interface Product {
     };
     city: string;
     isActive: number;
-    /* 
-    H temp einai temporary mexri na balw to backend
-    8a prepei na fenrei apo ola ta items me (item.bidder.UserID == MyID) to amount */
-    temp: number; 
+
 }
 
 
@@ -87,7 +86,7 @@ function ItemModal({ product, isOpen, onClose } : ItemModalProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <div className="text-3xl font-bold text-green-600">{product.Buy_Price}</div>
+                                <div className="text-3xl font-bold text-green-600">{product.currently}</div>
                                 <div className="text-sm text-gray-600">Seller: <span className="font-medium text-blue-600">{product.seller.sellerId}</span>
                                     <span className="text-green-600 ml-2">({product.seller.rating} positive)</span>
                                 </div>
@@ -140,6 +139,8 @@ export function BidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: (
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [unread, setUnread] = useState(0);
+    const [products, setProducts] = useState<Product[]>([]);
 
     const nav = useNavigate();
 
@@ -182,91 +183,43 @@ export function BidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: (
 
     // backend
     // fetct ta products pou exoyn kai emena san bidder
+    useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+        const fetch_unread = async () => {
+            try {
+                const res = await fetch_with_auth.get('/unread_messages/');
+                const data = res.data;
+                
+                
 
-const products = [
-    {
-    id: 1,
-    name: "The Great Gatsby - Classic Literature",
-    category: "Books",
-    currently: 12,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 3,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    isActive: 1,
-    temp: 10
-    },  {
-    id: 2,
-    name: "Active",
-    category: "Books",
-    currently: 10,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 0,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    temp: 10,
-    isActive: 1
+                setUnread(data.unread_count);
+                console.log("this is the unreads");
+                console.log(data.unread_count);
 
-    }, {
-    id: 3,
-    name: "Not Active",
-    category: "Books",
-    currently: 10,
-    Buy_Price: 15,
-    First_Bid: 10,
-    Number_of_Bids: 0,
-    Bids: null,
-    started: 19092025,
-    ends: 20092025,
-    seller: {
-        sellerId: "BookStore123",
-        rating: "98.5%",
-    },
-    description: "Something something",
-    image: "📚",
-    location: {
-        lat: 40.7128,
-        lng: -74.0060,
-    },
-    city: "New York, NY",
-    temp: 10,
-    isActive: 0
+            } catch (error) {
+                console.log("Error while fetching unread messages: ", error);
+            }
+            
+        }
 
-    }
-    
-  ];
+        const fetch_bids = async () => {
+            try {
+                const res = await fetch_with_auth.get('/my_bids');
+                const data = res.data;
+                setProducts(data);
+                console.log("These are the bids")
+                console.log(data);
+            } catch(error) {
+                console.log("Error while fetching user bids", error);
+            }
+        }
 
+        fetch_bids();
+        fetch_unread();
+        interval = setInterval(fetch_unread, 5000);
+        return () => clearInterval(interval);
+    }, []);
 
-
-  // backend
-  // fetch unread 
-  const unread = 3;
 
 
     return (
@@ -376,7 +329,7 @@ const products = [
                                     <div className="text-xl font-bold text-green-600 mb-2">
                                         Current Price: {product.currently}
                                         <span className="text-xl font-bold text-blue-600 mb-2 ml-4">
-                                        My bid: {product.temp}
+                                        My bid: {product.user_bid}
                                         </span>
                                     </div>
                                     <div className="text-sm text-gray-600 mb-3">

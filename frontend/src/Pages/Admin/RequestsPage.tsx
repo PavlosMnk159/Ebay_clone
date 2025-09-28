@@ -29,12 +29,14 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
   if (!isOpen ||!user) return null;
 
 
+
   const handleAcceptRequest = async () => {
     const data = {
       'user_id': user.id,
       'decision': "True",
     }
     const response = await fetch_with_auth.post('approve_user/', data);
+    onClose();
     console.log(response.data)
   };
 
@@ -44,6 +46,7 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
       'decision': "False",
     }
     const response = await fetch_with_auth.post('approve_user/', data);
+    onClose();
     console.log(response.data)
         
       
@@ -133,6 +136,7 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
   const [selectedProduct, setSelectedProduct] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [unread, setUnread] = useState(0);
 
   const nav = useNavigate();
 
@@ -149,6 +153,16 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
         nav('/chatIn')
     };
  
+  const get_users = async() => {
+    try  {
+        const res = await fetch_with_auth.get("/unapproved_user_list/");
+        const data = await res.data;
+        setUsers(data);
+        
+    } catch (e) {
+          console.log("Could not fetch user list:", e);
+    }
+  }
 
   const handleProductClick = (user: User) => {
     setSelectedProduct(user);
@@ -156,9 +170,32 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
   };
 
   const handleCloseModal = () => {
+    get_users();
     setIsModalOpen(false);
     setSelectedProduct(null);
   };
+
+  useEffect(() => {
+  let interval: ReturnType<typeof setInterval>;
+  const fetch_unread = async () => {
+    try {
+        const res = await fetch_with_auth.get('/unread_messages/');
+        const data = res.data
+        
+        setUnread(data.unread_count);
+        console.log("this is the unreads");
+        console.log(data.unread_count);
+
+    } catch (error) {
+        console.log("Error while fetching products: ", error);
+    }
+      
+  }
+
+    fetch_unread();
+    interval = setInterval(fetch_unread, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
    useEffect(() => {
     const get_users = async() => {
@@ -178,7 +215,6 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
 
   // backend
   // fetsch unread
-  const unread = 3;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,7 +234,7 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
                   className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                   Msgs
-                  {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                  {(<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
                     {unread}
                   </span>)}
               </button>

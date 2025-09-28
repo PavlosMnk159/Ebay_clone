@@ -13,7 +13,7 @@ from django.http import HttpResponse
 from decimal import Decimal
 
 from .models import Item, Category, Visit, Bid
-from .serializers import ItemSerializer, BidSerializer, AuctionCreation
+from .serializers import AuctionEditor, ItemSerializer, BidSerializer, AuctionCreation, MyBidItemSerializer
 from .recomendation_utils import recommend_items
 
 from user_messages.serializers import ConversationCreateSerializer, MessageCreateSerializer
@@ -43,14 +43,19 @@ class ItemList(APIView):
         max = request.GET.get('max')
         query = request.GET.get('query')
         location = request.GET.get('location')
+
+        
+            
         
         now = timezone.now()
 
-        res = assign_expired_auctions_to_highest_bidders()
-        print(res, flush=True)
+        assign_expired_auctions_to_highest_bidders()
 
         available_items = Item.objects.filter(active=True, ends__gt=now).order_by('ends')
-        
+
+        if (request.user.is_authenticated):
+            available_items = available_items.exclude(seller=request.user)
+
         if (category):
             available_items = available_items.filter(categories__name__iexact=category)
 
@@ -66,7 +71,6 @@ class ItemList(APIView):
         if (location):
             available_items = available_items.filter(Q(location__icontains=location) | Q(country__icontains=location))
         
-        available_items = list(available_items)
 
         if (request.user.is_authenticated):
             bids_from_user = list(Bid.objects.filter(bidder=request.user).values_list('item_id', flat=True))
@@ -139,7 +143,7 @@ class EditAuctionItem(APIView):
 
     def post(self, request):
         user = request.user
-        item_id = request.data.get('item_id')
+        item_id = request.data.get('id')
 
 
         item = get_object_or_404(Item, item_id=item_id)
@@ -152,17 +156,16 @@ class EditAuctionItem(APIView):
             )
 
         # Prevent editing once auction has ended or item sold
-        if not item.active or item.ends <= timezone.now() or item.buyer:
+        if item.ends <= timezone.now() or item.buyer:
             return Response(
                 {"error": "You cannot edit this item after it has ended or been sold."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = AuctionCreation(item, data=request.data, partial=True, context={'request': request})
+        serializer = AuctionEditor(item, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response({"detail": "Item updated successfully"}, status=status.HTTP_200_OK)
-        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -188,21 +191,42 @@ class DeleteAuctionItem(APIView):
         item.delete()
         return Response({"error": "Item deleted successfully"}, status=status.HTTP_200_OK)
     
+class ActivateItemView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        item_id = request.data.get('id')
+        if not item_id:
+            return Response({"error": "Item ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        item = get_object_or_404(Item, item_id=item_id)
+
+        # Optional: ensure only seller can activate
+        if item.seller != request.user:
+            return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+        item.active = True
+        item.save()
+
+        return Response({"detail": "Item activated successfully", "item_id": item.item_id})
+
 class PlaceBid(APIView):
-    """
-    View to place a bid on a specific item
-    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsApproved]
-    
+
     def post(self, request):
-        serialiser = BidSerializer(data=request.data)
-        if (serialiser.is_valid()):
-            serialiser.save()
-            return Response({"detail": "Bid placed successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    
+        item_id = request.data.get('item_id')
+        item = get_object_or_404(Item, item_id=item_id)
+
+        if item.seller == request.user:
+            return Response({"error": "You cannot bid on your own item."}, status=403)
+
+        serializer = BidSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(item=item)
+            return Response({"detail": "Bid placed successfully"}, status=201)
+        return Response(serializer.errors, status=400)
 
 class BuyOut(APIView):
     authentication_classes = [JWTAuthentication]
@@ -446,7 +470,46 @@ class ActiveItemsExportView(APIView):
         else:
             return JsonResponse({"error": "Invalid format, must be 'json' or 'xml'."}, status=400)
 
+class ItemBidsView(APIView):
+    """
+    View to get all bids for a specific item.
+    Only the seller (owner) of the item can access this.
+    GET /items/bids/?item_id=123
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        item_id = request.GET.get("item_id")
+        if not item_id:
+            return Response({"error": "item_id query parameter is required"}, status=400)
+
+        item = get_object_or_404(Item, item_id=item_id)
+
+        # Check if the logged-in user is the seller
+        if item.seller != request.user:
+            return Response({"error": "You are not allowed to view bids for this item."}, status=403)
+
+        bids = Bid.objects.filter(item=item).order_by("-time")
+        serializer = BidSerializer(bids, many=True)
+        return Response(serializer.data, status=200)
+
+class MyBids(APIView):
+    """
+    Returns all active auction items. If the user is logged in,
+    includes the user's latest bid on each item.
+    """
+    permission_classes = [IsAuthenticated]  # optional: remove if public access allowed
+
+    def get(self, request):
+        user = request.user
+
+        active_items = Item.objects.filter(active=True, bids__bidder=user).prefetch_related('bids', 'categories', 'images')
+
+        # Serialize with request in context so `user_bid` works
+        serializer = MyBidItemSerializer(active_items, many=True, context={'request': request})
+        return Response(serializer.data)
+    
 def assign_expired_auctions_to_highest_bidders():
     """
     Processes all expired auctions where the item is still active.

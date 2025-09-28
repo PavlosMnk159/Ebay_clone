@@ -46,6 +46,17 @@ class GetOutConversations(APIView):
         serializer = ConversationOutSerializer(conversations, many=True, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class UnreadMessageCountView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsApproved]
+
+    def get(self, request):
+        user = request.user
+
+        unread_count = Messages.objects.filter(receiver=user, seen=False).count()
+
+        return Response({"unread_count": unread_count})
 
 class GetConversationMessages(APIView):
     authentication_classes = [JWTAuthentication]

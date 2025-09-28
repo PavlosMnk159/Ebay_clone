@@ -1,54 +1,23 @@
-import { useState } from "react";
+import fetch_with_auth from "@/Authentication/axios";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
 
 interface Bid {
-    bidder: Bidder;
-    time: number; //time the bid was made
+    bidder_username: string;
     amount: number;
+    time: number; //time the bid was made
+    
 }
-
-interface Bidder {
-    userID: string;
-    rating: number;
-    location: {
-        lat: number,
-        lng: number
-    }
-    country: string;
-}
-
-// interface Product {
-//     id: number;
-//     name: string;
-//     category: string;
-//     currently: number;
-//     Buy_Price: number;
-//     First_Bid:number;
-//     Number_of_Bids: number;
-//     Bids: Bid[] | null;
-//     started: number;
-//     ends: number;
-//     seller: {
-//         sellerId: string,
-//         rating: string
-//     };
-//     description: string;
-//     image: string;
-//     location: {
-//         lat: number,
-//         lng: number
-//     };
-//     city: string;
-//     isActive: number;
-// }
-
-
 
 
 export function ItemBidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: () => void;}){
+
     const { productId } = useParams<{ productId: string }>();
     const [searchQuery, setSearchQuery] = useState("");
+    const [unread, setUnread] = useState(0);
+    const [biddings, setBiddings] = useState<Bid[]>([])
+
     const nav = useNavigate();
 
     const navigateMyAuction = () => {
@@ -85,56 +54,46 @@ export function ItemBidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
 
 
    
+
     
-    const bidders: Bidder[] = [
-        {
-            userID: "1",
-            rating: 0.8,
-            location: {
-                lat: 40,
-                lng: 70
-            },
-            country: "Athens, Greece",
-        },{
-            userID: "2",
-            rating: 0.6,
-            location: {
-                lat: 80,
-                lng: 70
-            },
-            country: "Thessaloniki, Greece",
+
+
+    
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+        const fetch_unread = async () => {
+            try {
+                const res = await fetch_with_auth.get('/unread_messages/');
+                const data = res.data
+                
+                setUnread(data.unread_count);
+                console.log("this is the unreads");
+                console.log(data.unread_count);
+
+            } catch (error) {
+                console.log("Error while fetching products: ", error);
+            }
+            
         }
-        
-    ];
-    
-    const biddings: Bid [] = [
-      {
-          bidder: bidders[0],
-          time: 16092025,
-          amount: 12
-          
-      },      {
-          bidder: bidders[1],
-          time: 16092025,
-          amount: 14
-          
-      },
-        {
-          bidder: bidders[1],
-          time: 16092025,
-          amount: 15
-          
-      }
 
+        const fetch_item_bids = async () => {
+            try {
+                const res = await fetch_with_auth.get(`item_bids/?item_id=${productId}`);
+                const data = res.data;
+                setBiddings(data);
+            } catch (error) {
+                console.log("Error while fetching bids", error)
+            }
+        }
 
-    ];
+        fetch_unread();
+        fetch_item_bids();
+        interval = setInterval(fetch_unread, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
 
     
-  // backend
-  // fetch unread 
-  const unread = 3;
-
-
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
@@ -146,29 +105,7 @@ export function ItemBidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                             <div className="text-3xl font-bold text-blue-600 mr-8">eBuy myBidding Page</div>
                         </div>
 
-                        {/* Sell Button & Search Bar */}
-                        <div className="flex-1 max-w-2xl mx-4 flex gap-4">
-
-                            {/* Search Bar */}
-                            <div className="flex flex-1">
-                                <input 
-                                type="text" 
-                                placeholder="Search for anything"
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={handleKeyPress}
-                                />
-
-                                <button
-                                    onClick={handleSearch}
-                                    className="bg-blue-600 text-white px-6 py-2 rounded-r-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    Search
-                                </button>
-                            </div>
-                        </div>
-
+                        {/* Action Buttons */}
                         <div className="flex items-center gap-4">
 
                             <button
@@ -215,7 +152,7 @@ export function ItemBidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                     <div className="mb-4 flex items-center justify-between">
                         <h2 className="text-2xl font-semibold text-gray-800">My Auctions</h2>
                         <div className="text-sm text-gray-600">
-                            {biddings.length} results for {productId}
+                            {biddings.length} results for Product#{productId}
                         </div>
                     </div>
                     <button
@@ -238,11 +175,11 @@ export function ItemBidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogou
                         .sort((a,b) => b.amount - a.amount)
                         .map((bid) => (
                             <div
-                                key={bid.bidder.userID}
+                                key={bid.bidder_username}
                                 className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 p-4 cursor-pointer transform hover:-translate-y-1 space-y-3"
                             >
                                 
-                                <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{bid.bidder.userID}</h3>
+                                <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{bid.bidder_username}</h3>
                                 <div className="text-xl font-bold text-green-600 mb-2">
                                     Amount of bid: {bid.amount}
                                 </div>

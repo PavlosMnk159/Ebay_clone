@@ -1,6 +1,6 @@
 import os
-import sys
 from pathlib import Path
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -84,3 +84,14 @@ AUTH_USER_MODEL = "User.CustomUser"
 
 MEDIA_URL = '/media/'  
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
+
+
+SIMPLE_JWT = {
+
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=5),
+
+    'ROTATE_REFRESH_TOKENS': True, 
+    'BLACKLIST_AFTER_ROTATION': True,  
+}

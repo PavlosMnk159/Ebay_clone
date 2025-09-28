@@ -19,14 +19,14 @@
     </Item>
 
     <Item ItemID="2">
-    <Name>Lord of the rings</Name>
+    <Name>Active</Name>
     <Category>Books</Category>
     <Currently>$10.00</Currently>
     <Buy_Price>$15.00</Buy_Price>
     <First_Bid>$10.00</First_Bid>
     <Number_of_Bids>0</Number_of_Bids>
     <Bids />
-    <Location Latitude="40.7128" Longitude=-"74.0060">New York, NY</Location>
+    <Location Latitude="40.7128" Longitude="-74.0060">New York, NY</Location>
     <Country>USA</Country>
     <Started>Sep-19-25 00:00:00</Started>
     <Ends>Sep-20-26 00:00:00</Ends>
@@ -35,14 +35,14 @@
     </Item>
 
     <Item ItemID="3">
-    <Name>Harry POTter</Name>
+    <Name>Not Active</Name>
     <Category>Books</Category>
     <Currently>$10.00</Currently>
-    <Buy_Price>$16.00</Buy_Price>
+    <Buy_Price>$15.00</Buy_Price>
     <First_Bid>$10.00</First_Bid>
     <Number_of_Bids>0</Number_of_Bids>
     <Bids />
-    <Location>New York</Location>
+    <Location Latitude="40.7128" Longitude="-74.0060">New York, NY</Location>
     <Country>USA</Country>
     <Started>Sep-19-25 00:00:00</Started>
     <Ends>Sep-25-26 00:00:00</Ends>
@@ -107,7 +107,7 @@
     <Location Latitude="35.3387" Longitude="25.1442">Heraklion, Greece</Location>
     <Country>Greece</Country>
     <Started>Sep-19-25 09:00:00</Started>
-    <Ends>Sep-24-25 09:00:00</Ends>
+    <Ends>Sep-24-26 09:00:00</Ends>
     <Seller Rating="95%" UserID="test" />
     <Description>Beautiful hand-painted antique vase.</Description>
     <Images>

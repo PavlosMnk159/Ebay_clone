@@ -117,13 +117,21 @@ function MainApp() {
   const handleLogin = async (data: LoginFormData) => {
     const response = await loginUser(data);
     if (response.success) {
-      setIsLoggedIn(true);
-      localStorage.setItem('is_logged_in', 'true');
-      localStorage.setItem('currPage', '/homepage');
-      
-      if (response.is_admin){
-        setIsAdmin(true);
-        localStorage.setItem('is_admin', 'true');
+
+      if(response.is_approved){
+
+        setIsLoggedIn(true);
+        localStorage.setItem('is_logged_in', 'true');
+        localStorage.setItem('currPage', '/homepage');
+        
+        if (response.is_admin){
+          setIsAdmin(true);
+          localStorage.setItem('is_admin', 'true');
+        }
+      }else{
+        setIsRegister(true);
+        navigate('/waiting');
+
       }
     } else {
       alert("Login failed, please try again.");

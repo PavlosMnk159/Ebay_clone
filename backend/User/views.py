@@ -25,6 +25,7 @@ class RegisterView(APIView):
             serializer.save()
             return Response({"success": True, "detail": "User created successfully"}, status=status.HTTP_201_CREATED)         
         return Response({"success": False, "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)    
+
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerialiser
 

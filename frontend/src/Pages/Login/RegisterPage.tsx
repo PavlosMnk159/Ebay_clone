@@ -51,11 +51,6 @@ export function RegisterPage({
       return;
     }
 
-    if (password.length < 3) {
-      alert("Password number must be at least 3 characters long");
-      return;
-    }
-
 
     setIsLoading(true);
     
@@ -127,6 +122,9 @@ export function RegisterPage({
               {passwordError && (
                 <p className="text-red-500 text-xs mt-1">{passwordError}</p>
               )}
+              <p className="text-sm text-gray-500 mt-2">
+                At least 8 characters
+              </p>
             </div>
 
             <div>
@@ -193,6 +191,9 @@ export function RegisterPage({
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 placeholder="Enter your email"
               />
+              <p className="text-sm text-gray-500 mt-2">
+                xxxxx@XXXX.com
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -221,6 +222,9 @@ export function RegisterPage({
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Number"
                 />
+                <p className="text-sm text-gray-500 mt-2">
+                +3069xxxxxxxxx
+              </p>
               </div>
             </div>
 

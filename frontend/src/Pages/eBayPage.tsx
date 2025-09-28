@@ -43,10 +43,12 @@ interface Product {
     };
     description: string;
     images: string[]; 
-    location: string;
+    city: string;
     country: string;
-    latitude: number;
-    longitude: number;
+    location : {
+        lat : number;
+        lng : number;
+    }
     isActive: number;
 }
 
@@ -57,59 +59,6 @@ interface Filters {
     query?: string;
     location?: string;
 }
-
-
-
-  const handleDownload = (data: any, format: string) => {
-    //backend
-    //εδω αντι για data θα υπαρχει το product
-    //και θα κανεις fetch το product με βαση το format
-    // αν εινα xml ή αν ειναι json
-
-
-    let content;
-    let mimeType;
-    let fileExtension;
-
-    
-    // Handle different formats
-    switch (format.toLowerCase()) {
-      case 'json':
-        //backend
-        // fetch data.json
-        content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-        mimeType = 'application/json';
-        fileExtension = '.json';
-        break;
-      case 'xml':
-        //backend
-        // fetch data.xml
-        content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-        mimeType = 'application/xml';
-        fileExtension = '.xml';
-        break;
-      default:
-        //backend
-        // fetch data
-        content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-        mimeType = 'application/xml';
-        fileExtension = '.xml';
-    }
-    
-    // Ensure filename has correct extension
-    const finalFilename = 'download'.includes('.') ? 'download' : 'download' + fileExtension;
-    
-    // Create blob and download
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = finalFilename;
-    document.body.appendChild(a); // Append to body for better browser compatibility
-    a.click();
-    document.body.removeChild(a); // Clean up
-    URL.revokeObjectURL(url);
-  };
 
 
 
@@ -200,7 +149,7 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
             };
             
             try {
-                const res = await fetch_with_auth.post('make-offer', request_data);
+                const res = await fetch_with_auth.post('bid/', request_data);
                 console.log(res.data);
                 alert('Offer submitted successfully!');
                 
@@ -241,7 +190,25 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
 
                     {/* Product Info */}
                     <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="text-3xl mr-3">{product.images[0]}</div>
+                        <div className="text-3xl mr-3">
+                            {product.images? (
+                                <img 
+                                    src={`${BASE_URL}/${product.images[0]}`}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover rounded-lg"
+                                    onError={(e) => {
+                                        // Replace with fallback letter on error
+                                        const target = e.currentTarget;
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                            parent.innerHTML = product.name.charAt(0);
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                product.name.charAt(0)
+                            )}
+                        </div>
                         <div className="flex-1">
                             <h4 className="font-medium text-gray-800 text-sm">{product.name}</h4>
                             <p className="text-sm text-gray-600">Seller: {product.seller.sellerId}</p>
@@ -387,7 +354,7 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
 
                     {/* Product Info */}
                     <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="text-3xl mr-3">{product.images[0]}</div>
+                        <div className="text-3xl mr-3">{product.name.charAt(0)}</div>
                         <div className="flex-1">
                             <h4 className="font-medium text-gray-800 text-sm">{product.name}</h4>
                             <p className="text-sm text-gray-600">Seller: {product.seller.sellerId}</p>
@@ -479,7 +446,7 @@ function ItemModal({ isGuest, product, isOpen, onClose, onDataChange }: ItemModa
     if (!isOpen || !product) return null;
 
     // Check if product has the images property, if not, handle gracefully
-    const productImages = product.images || [product.images[0] || 'P']; // Fallback
+    const productImages = product.images ? product.images : product.name.charAt(0);
 
     const openPurchaseModal = (mode: 'buy' | 'offer') => {
         setPurchaseMode(mode);
@@ -534,16 +501,14 @@ function ItemModal({ isGuest, product, isOpen, onClose, onDataChange }: ItemModa
                                             alt={`${product.name} - Image ${selectedImageIndex + 1}`}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
-                                                // If image fails to load, show letter fallback
-                                                const container = e.currentTarget.parentElement;
-                                                if (container) {
-                                                    container.innerHTML = `
-                                                        <div class="w-full h-48 flex items-center justify-center text-4xl font-bold text-gray-600 bg-gradient-to-br from-blue-100 to-purple-100">
-                                                            ${product.name.charAt(0).toUpperCase()}
-                                                        </div>
-                                                    `;
-                                                }
-                                            }}
+                                            // Replace with fallback letter on error
+                                            const target = e.currentTarget;
+                                            const parent = target.parentElement;
+                                            if (parent) {
+                                                parent.innerHTML = product.name.charAt(0);
+                                            }
+                                        }}
+                                          
                                         />
                                         {/* Navigation arrows for multiple images */}
                                         {product.images.length > 1 && (
@@ -567,34 +532,27 @@ function ItemModal({ isGuest, product, isOpen, onClose, onDataChange }: ItemModa
                                             </>
                                         )}
                                         </>
-                                    ) : null}
-                                    <div 
-                                        className={`w-full h-full flex items-center justify-center text-8xl font-bold text-gray-600 bg-gradient-to-br from-blue-100 to-purple-100 ${
-                                        product.images && product.images.length === 0 ? 'flex' : 'hidden'
-                                        }`}
-                                        style={product.images && product.images.length > 0 ? { display: 'none' } : {}}
-                                    >
-                                        {product.images[selectedImageIndex]}
-                                    </div>
-                                    </div>
+                                    ) : product.name.charAt(0)}
+                                    
+                                </div>
 
                                 <div className="space-y-2">
-                                    <div className="text-2xl font-bold text-green-600">Buy It Now for: {product.Buy_Price}</div>
+                                    {product.Buy_Price && (<div className="text-2xl font-bold text-green-600">Buy It Now for: {product.Buy_Price}</div>)}
                                     <div className="text-2xl font-bold text-green-600">Current best bid: {product.currently}</div>
                                     <div className="text-sm text-gray-600">Seller: <span className="font-medium text-blue-600">{product.seller.sellerId}</span>
                                         <span className="text-green-600 ml-2">({product.seller.rating} positive)</span>
                                     </div>
-                                    <div className="text-sm text-gray-600">Location: <span className="font-medium">{product.country}</span></div>
+                                    <div className="text-sm text-gray-600">Location: <span className="font-medium">{product.city}, {product.country}</span></div>
                                     {/* <div className="text-sm text-gray-600">Coordinates: <span className="font-medium">{product.location.lat}, {product.location.lng}</span></div> */}
                                 </div>
 
                                 {/* Map section */}
-                                {product.location && product.country && (
+                                {product.city && product.country && (
                                     <div className="mt-4">
                                         <h4 className="font-medium text-gray-800 mb-2">Seller Location</h4>
                                         <SimpleMap 
-                                            lat={product.latitude} 
-                                            lng={product.longitude}
+                                            lat={product.location.lat} 
+                                            lng={product.location.lng}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
                                             Approximate location for privacy
@@ -619,10 +577,10 @@ function ItemModal({ isGuest, product, isOpen, onClose, onDataChange }: ItemModa
                                             <span className="text-gray-600">Item ID:</span>
                                             <span className="font-medium">#{product.id.toString().padStart(6, '0')}</span>
                                         </div>
-                                        <div className="flex justify-between">
+                                        {product.category && (<div className="flex justify-between">
                                             <span className="text-gray-600">Category:</span>
                                             <span className="font-medium">{product.category}</span>
-                                        </div>
+                                        </div>)}
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Images:</span>
                                             <span className="font-medium">{productImages.length}</span>
@@ -642,7 +600,7 @@ function ItemModal({ isGuest, product, isOpen, onClose, onDataChange }: ItemModa
 
                                 {/* Action buttons */}
                                 <div className="space-y-3">
-                                    {!isGuest && (
+                                    {!isGuest && product.Buy_Price && (
                                         <button 
                                             onClick={(e) => {
                                                 e.preventDefault();
@@ -701,9 +659,8 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     const [categories, setCategories] = useState<String[]>([]);
     const [filters, setFilters] = useState<Filters>({});
 
-
-    // const [LocationLat, setLocationLat] = useState(0);
-
+    const [unread, setUnread] = useState(0);
+    const [countRequests, setCountRequests] = useState(0);
 
 
     const openPurchaseModal = (product: Product, mode: 'buy' | 'offer') => {
@@ -716,13 +673,19 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         setIsPurchaseModalOpen(false);
         setIsModalOpen(false);
         setPurchaseProduct(null);
-        refreshData();
-
     };
 
     const refreshData = async () => {
+        let data;
+        
         try {
-            const data = await fetch_get('/items/');
+            if (isGuest) {
+                data = await fetch_get('/items/');
+                
+            } else {
+                const res = await fetch_with_auth.get('/items/');
+                data = res.data;
+            }
             setProducts(data);
         } catch (error) {
             console.log("Error while refreshing data: ", error);
@@ -731,10 +694,19 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
 
     useEffect(() => {
         const fetch_products = async () => {
+            let data;
+            console.log("in user effect ", '/items/');
             try {
-                const data = await fetch_get('/items/');
+                if (isGuest) {
+                    data = await fetch_get('/items/');
+                    
+                } else {
+                    const res = await fetch_with_auth.get('/items/');
+                    data = res.data;
+                    console.log("fetched",data);
+
+                }
                 setProducts(data);
-                console.log(data);
 
             } catch (error) {
                 console.log("Error while fetching products: ", error);
@@ -753,6 +725,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
 
         fetch_products();
         fetch_categories();
+
     }, []);
 
     const nav = useNavigate();
@@ -776,11 +749,16 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
             const entries = Object.entries(filters).filter(
                 ([_, value]) => value != null && value.trim() !== ''
             );
+
+            // if(filters === ""){
+            //     filters[0] = "";
             
-            const queryString = new URLSearchParams(entries as [string, string][]).toString();
-            const endpoint = queryString ? `/items/?${queryString}` : `/items/`;
-            const data = await fetch_get(endpoint)
-            setProducts(data);
+            // }else{
+                const queryString = new URLSearchParams(entries as [string, string][]).toString();
+                const url = queryString ? `/items/?${queryString}` : `/items/`
+                const data = await fetch_get(url);
+                setProducts(data);
+            // }
 
         } catch (error) {
             console.log("Error while applying filters: ", error);
@@ -804,30 +782,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setSelectedProduct(null);
-        refreshData();
     };
-
-    const jsonData = [
-        { id: 1, name: "Item 1", category: "electronics" },
-        { id: 2, name: "Item 2", category: "books" },
-        { id: 3, name: "Item 3", category: "clothing" }
-    ];
-    
-    const xmlData = `<?xml version="1.0" encoding="UTF-8"?>
-<items>
-  <item id="1">
-    <name>Item 1</name>
-    <category>electronics</category>
-  </item>
-  <item id="2">
-    <name>Item 2</name>
-    <category>books</category>
-  </item>
-  <item id="3">
-    <name>Item 3</name>
-    <category>clothing</category>
-  </item>
-</items>`;
 
 
     {/* Products page numbers */}
@@ -866,9 +821,109 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     };
 
 
-  // backend
-  // fetch unread 
-  const unread = 3;
+
+    const handleDownload = async (format: string) => {
+
+        let content;
+        let mimeType;
+        let fileExtension;
+
+        
+        // Handle different formats
+        switch (format.toLowerCase()) {
+        case 'json':
+
+            const res_json = await fetch_with_auth.get('extract_json/')
+            const data_json = res_json.data; // use this directly
+            mimeType = 'application/json';
+            fileExtension = '.json';
+
+
+            content = typeof data_json === 'string' ? data_json : JSON.stringify(data_json, null, 2);
+
+            const finalFilename_json = 'download' + fileExtension;
+
+            const blob_json = new Blob([content], { type: mimeType });
+            const url_json = URL.createObjectURL(blob_json);
+            const a_json = document.createElement('a');
+            a_json.href = url_json;
+            a_json.download = finalFilename_json;
+            document.body.appendChild(a_json);
+            a_json.click();
+            document.body.removeChild(a_json);
+            URL.revokeObjectURL(url_json);
+            break;
+
+
+            
+        case 'xml':
+            const res_xml = await fetch_with_auth.get('extract_xml/')
+            const data_xml = res_xml .data; // use this directly
+            mimeType = 'application/json';
+            fileExtension = '.json';
+
+
+            content = typeof data_xml === 'string' ? data_xml : JSON.stringify(data_xml, null, 2);
+
+            const finalFilename_xml = 'download' + fileExtension;
+
+            const blob_xml = new Blob([content], { type: mimeType });
+            const url_xml = URL.createObjectURL(blob_xml);
+            const a_xml = document.createElement('a');
+            a_xml.href = url_xml;
+            a_xml.download = finalFilename_xml;
+            document.body.appendChild(a_xml);
+            a_xml.click();
+            document.body.removeChild(a_xml);
+            URL.revokeObjectURL(url_xml);
+            break;
+
+        }
+     
+    };
+
+
+    useEffect(() => {
+        // Cleanup fnction to properly destroy existing map
+        const get_users = async() => {
+        try  {
+            const count_result = await fetch_with_auth.get("/request_count/");
+            setCountRequests(count_result.data.unapproved_users);
+            
+        } catch (e) {
+                console.log("Could not fetch user list:", e);
+        }
+        }
+
+        get_users();
+
+    }, []);
+    
+
+    useEffect(() => {
+        let interval: ReturnType<typeof setInterval>;
+        const fetch_unread = async () => {
+            try {
+                if (isGuest) return;
+                const res = await fetch_with_auth.get('/unread_messages/');
+                const data = res.data
+                
+                setUnread(data.unread_count);
+                console.log("this is the unreads");
+                console.log(data.unread_count);
+
+            } catch (error) {
+                console.log("Error while fetching products: ", error);
+            }
+            
+        }
+
+        fetch_unread();
+        interval = setInterval(fetch_unread, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -911,7 +966,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
                                 className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                             >
                                 Msgs
-                                {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                {(<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
                                     {unread}
                                 </span>)}
                             </button>)}
@@ -919,9 +974,19 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
                             {/* Admin Button */}
                             {isAdmin && (<button
                                 onClick={navigateUserlist}
-                                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                                className="relative bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
                             >
                                 Userlist
+                                {countRequests && (
+                                <span
+                                    className={`absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center`}
+                                    style={{
+                                    width: `${Math.max(24, countRequests.toString().length * 12)}px`,
+                                    }}
+                                >
+                                    {countRequests}
+                                </span>
+                                )}
                             </button>)}
 
                             {/* Sell Button */}
@@ -1013,20 +1078,16 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
                         {isAdmin && (
                             <div className="flex gap-2">
                             <button
-                                onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDownload(xmlData, 'xml');
+                                onClick={() => {
+                                handleDownload('xml');
                                 }}
                                 className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
                             >
                                 Download XML
                             </button>
                             <button
-                                onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDownload(jsonData, 'json');
+                                onClick={() => {
+                                handleDownload('json');
                                 }}
                                 className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
                             >
@@ -1065,10 +1126,11 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
                                                 alt={product.name}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                    const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                                                    if (nextElement) {
-                                                        nextElement.style.display = 'flex';
+                                                    // Replace with fallback letter on error
+                                                    const target = e.currentTarget;
+                                                    const parent = target.parentElement;
+                                                    if (parent) {
+                                                        parent.innerHTML = product.name.charAt(0);
                                                     }
                                                 }}
                                             />
@@ -1082,15 +1144,14 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
                                         ) : null}
                                         <div 
                                             className={`w-full h-full flex items-center justify-center text-4xl font-bold text-gray-600 bg-gradient-to-br from-blue-100 to-purple-100 ${
-                                            product.images && product.images.length === 0 ? 'flex' : 'hidden'
+                                            product.images.length > 0 ? 'hidden' : 'flex'
                                             }`}
-                                            style={product.images && product.images.length > 0 ? { display: 'none' } : {}}
                                         >
-                                            {product.images[0]}
+                                            {product.name.charAt(0)}
                                         </div>
                                     </div>
                                     <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{product.name}</h3>
-                                    {product.Buy_Price > 0 && (<div className="text-xl font-bold text-green-600 mb-2">
+                                    {product.Buy_Price && (<div className="text-xl font-bold text-green-600 mb-2">
                                         Buy it now for: {product.Buy_Price}
                                     </div>)}
                                     <div className="text-xl font-bold text-green-600 mb-2">
@@ -1100,7 +1161,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
                                         Seller: {product.seller.sellerId} ({product.seller.rating} positive)
                                     </div>
                                     
-                                    {!isGuest && (<button
+                                    {!isGuest && product.Buy_Price &&(<button
                                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm"
                                         onClick={async (e) => {
                                             e.preventDefault();

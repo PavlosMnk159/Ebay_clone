@@ -30,6 +30,21 @@
     <Phone>+306900000002</Phone>
     <AFM>100000002</AFM>
   </User>
+   <User>
+    <Username>BookStore123</Username>
+    <Password>test1234</Password>
+    <Email>bookstore123@example.com</Email>
+    <FirstName>Gufdasest</FirstName>
+    <LastName>fa</LastName>
+    <Country>Greece</Country>
+    <Region>Thessaloniki</Region>
+    <City>Thessaloniki</City>
+    <PostalCode>54622</PostalCode>
+    <Address>Elm Street</Address>
+    <HouseNumber>2</HouseNumber>
+    <Phone>+306900000002</Phone>
+    <AFM>100000002</AFM>
+  </User>
     <User>
     <Username>john_doe</Username>
     <Password>password</Password>

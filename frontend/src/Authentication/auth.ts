@@ -8,7 +8,7 @@ export const loginUser = async (data: LoginFormData) => {
     const res = await axios.post(`${BASE_URL}/token/`, data);
     localStorage.setItem('access_token', res.data.access);
     localStorage.setItem('refresh_token', res.data.refresh);
-    return { success: true, is_admin: res.data.is_admin };
+    return { success: true, is_admin: res.data.is_admin, is_approved: res.data.is_approved};
   } catch (err: any) {
     return { success: false, message: err.response?.data || 'Login failed' };
   }

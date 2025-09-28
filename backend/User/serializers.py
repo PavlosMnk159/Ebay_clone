@@ -38,4 +38,5 @@ class LoginSerialiser(TokenObtainPairSerializer):
         data = super().validate(attrs)
         data['is_admin'] = self.user.is_staff
         data['username'] = self.user.username 
+        data['is_approved'] = self.user.is_approved
         return data

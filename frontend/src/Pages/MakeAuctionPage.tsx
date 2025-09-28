@@ -73,7 +73,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
   // Selling page state
   const [sellingData, setSellingData] = useState({
     name: "",
-    categories: [] as string[],
+    categories: "",
     currently: 0,
     Buy_Price: 0 ,
     First_Bid: 0,
@@ -98,6 +98,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
   // fetch categories
 
   const [categories, setCategories] = useState<string[]>([]);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
 
@@ -114,6 +115,28 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
       fetch_categories();
   }, []);
 
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    const fetch_unread = async () => {
+        try {
+            const res = await fetch_with_auth.get('/unread_messages/');
+            const data = res.data
+            
+            setUnread(data.unread_count);
+            console.log("this is the unreads");
+            console.log(data.unread_count);
+
+        } catch (error) {
+            console.log("Error while fetching products: ", error);
+        }
+        
+    }
+
+    fetch_unread();
+    interval = setInterval(fetch_unread, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSellingDataChange = (field: string, value: number | string | string[] | File[] | null) => {
     setSellingData(prev => ({
       ...prev,
@@ -121,20 +144,17 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
     }));
   };
 
-  // Fixed: Handle multiple image uploads properly
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     // Add new files to existing images instead of replacing them
     handleSellingDataChange('images', [...sellingData.images, ...files]);
   };
 
-  // New function to remove a specific image
   const removeImage = (indexToRemove: number) => {
     const updatedImages = sellingData.images.filter((_, index) => index !== indexToRemove);
     handleSellingDataChange('images', updatedImages);
   };
 
-  // New function to clear all images
   const clearAllImages = () => {
     handleSellingDataChange('images', []);
     // Reset file input
@@ -181,7 +201,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
         // Reset form after successful submission
         setSellingData({
           name: "",
-          categories: [] as string[],
+          categories: "",
           currently: 0,
           Buy_Price: 0,
           First_Bid: 0,
@@ -222,10 +242,6 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
                      sellingData.currently &&
                      sellingData.ends;
 
-  // backend
-  // fetch unread 
-  const unread = 3;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -245,7 +261,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
                   className="relative bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                   Msgs
-                  {unread && (<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                  {(<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
                       {unread}
                   </span>)}
               </button>
@@ -324,28 +340,37 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
               <div className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <div className="text-lg text-gray-700 mb-3">Select categories:</div>
               <div className="max-h-48 overflow-y-auto">
-                {categories.map((cat, index) => (
-                  <label key={index} className="flex items-center mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                    <input
-                      type="checkbox"
-                      value={cat}
-                      checked={sellingData.categories.includes(cat)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleSellingDataChange('categories', [...sellingData.categories, cat]);
-                        } else {
-                          handleSellingDataChange('categories', sellingData.categories.filter(c => c !== cat));
-                        }
-                      }}
-                      className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="text-lg">{cat}</span>
-                  </label>
-                ))}
+                {categories
+                  .filter(cat => cat.toLowerCase() !== "none")
+                  .map((cat, index) => (
+                    <label
+                      key={index}
+                      className="flex items-center mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        value={cat}
+                        checked={sellingData.categories.includes(cat)}
+                        onChange={() => {
+                          // Only allow one selection
+                          if (!sellingData.categories.includes(cat)) {
+                            handleSellingDataChange('categories', [cat]);
+                          } else {
+                            handleSellingDataChange('categories', []);
+                          }
+                        }}
+                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-lg">{cat}</span>
+                    </label>
+                  ))}
               </div>
             </div>
               <p className="text-sm text-gray-500 mt-2">
-                Choose the category that best describes your item
+                • Choose the category that best describes your item
+              </p>
+              <p className="text-sm text-gray-500">
+                • YOu can also not choose a category if it feels restrictive
               </p>
             </div>
 
@@ -469,6 +494,9 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
                 value={sellingData.ends}
                 onChange={(e) => handleSellingDataChange('ends', e.target.value)}
               />
+              <p className="text-sm text-gray-500 mt-2">
+                It should be YYYY-MM-DD
+              </p>
             </div>
 
             <div>
@@ -557,16 +585,15 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
 
               
             </div>
-
             {/* Form Summary */}
             {isFormValid && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-semibold text-green-800 mb-2">✅ Auction Summary</h4>
                 <div className="text-sm text-green-700 space-y-1">
                   <p><strong>Item:</strong> {sellingData.name}</p>
-                  <p><strong>Category:</strong> {sellingData.categories.join(', ')}</p>
-                  <p><strong>Starting Bid:</strong> €{sellingData.currently}</p>
-                  {sellingData.Buy_Price && (
+                  <p><strong>Category:</strong> {sellingData.categories}</p>
+                  {/* <p><strong>Category:</strong> {sellingData.categories.join(', ')}</p> */}
+                  {sellingData.Buy_Price > 0 && (
                     <p><strong>Buy It Now:</strong> €{sellingData.Buy_Price}</p>
                   )}
                   <p><strong>Starting Price:</strong> €{sellingData.currently}</p>
@@ -589,7 +616,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {isFormValid ? '🔨 Start Auction Now' : '📝 Complete Required Fields'}
+                {isFormValid ? '🔨 Complete Auction Now' : '📝 Complete Required Fields'}
               </button>
               
               {!isFormValid && (
