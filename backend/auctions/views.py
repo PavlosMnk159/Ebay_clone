@@ -16,7 +16,8 @@ from .models import Item, Category, Visit, Bid
 from .serializers import ItemSerializer, BidSerializer, AuctionCreation
 from .recomendation_utils import recommend_items
 
-from user_messages.serializers import ConversationSerializer, MessageSerializer
+from user_messages.serializers import ConversationCreateSerializer, MessageCreateSerializer
+from user_messages.models import Conversations, Messages
 
 from User.permissions import IsApproved, CanViewUserDetails
 
@@ -28,8 +29,7 @@ class CategoryList(APIView):
     View that returns all the categories of items that are currently active
     """
     def get(self, request):
-        now = timezone.now()
-        categories = Category.objects.filter(item__active=True, item__ends__gt=now).values_list('name', flat=True).distinct()
+        categories = Category.objects.all().values_list('name', flat=True).distinct()
         return JsonResponse(list(categories), safe=False)
 
 class ItemList(APIView):
@@ -44,37 +44,15 @@ class ItemList(APIView):
         query = request.GET.get('query')
         location = request.GET.get('location')
         
-
         now = timezone.now()
-        recently_unavailable_items = Item.objects.filter(ends__lte=now)
-        recently_unavailable_items.update(active=False)  
 
-        #Get the highest bids per Item
-        highest_bids = (
-            Bid.objects.filter(item__in=recently_unavailable_items)
-            .values('item')
-            .annotate(max_amount=Max('amount'))
-        )
-
-        # Get the corresponding bidder for each of these bids
-        highest_bids = (
-            Bid.objects.filter(item__in=recently_unavailable_items)
-            .values('item')                       # group by item
-            .annotate(max_amount=Max('amount'))   # highest bid per item
-        )
-
-        # Assign the highest bidder as the buyer of each item
-        for hb in highest_bids:
-            item = Item.objects.get(id=hb['item'])
-            top_bid = Bid.objects.filter(item=item, amount=hb['max_amount']).first()
-            if top_bid:
-                item.buyer = top_bid.bidder
-                item.save()
+        res = assign_expired_auctions_to_highest_bidders()
+        print(res, flush=True)
 
         available_items = Item.objects.filter(active=True, ends__gt=now).order_by('ends')
         
         if (category):
-            available_items = available_items.filter(category=category)
+            available_items = available_items.filter(categories__name__iexact=category)
 
         if (min is not None and min != ''):
             available_items = available_items.filter(currently__gte=Decimal(min))
@@ -148,9 +126,11 @@ class CreateAuctionItem(APIView):
     def post(self, request):
         serialiser = AuctionCreation(data=request.data, context={'request': request})
 
+        print(request.data)
         if (serialiser.is_valid()):
             serialiser.save()
             return Response({"detail": "Item created successfully"}, status=status.HTTP_201_CREATED)
+        print(serialiser.errors, flush=True)
         return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class EditAuctionItem(APIView):
@@ -265,10 +245,11 @@ class BuyOut(APIView):
         }
 
         # Create conversation with user
-        conversation = ConversationSerializer(data = conversation_data)
+        conversation = ConversationCreateSerializer(data = conversation_data, context={'request': request})
         if conversation.is_valid():
             conversation_instance = conversation.save()
         else:
+            print("Message errors:", conversation.errors)
             return Response(
                 {"error": "Failed to create conversation", "details": conversation.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -277,13 +258,16 @@ class BuyOut(APIView):
         #add an initial message to the conversation
         message_data = {
             "conversation": conversation_instance.id,
-            "message": f"Hi, I am {user.first_name} and i have just purchased {item.name}",
+            "sender": user.id,
+            "receiver": item.seller.id,
+            "message": f"Hi, I am {user.first_name} and I have just purchased {item.name}",
         }
 
-        message = MessageSerializer(data = message_data)
+        message = MessageCreateSerializer(data = message_data)
         if (message.is_valid()):
             message.save()
         else:
+            print("Message errors:", message.errors)
             return Response(
                 {"error": "Failed to send initial message", "details": conversation.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -461,3 +445,67 @@ class ActiveItemsExportView(APIView):
 
         else:
             return JsonResponse({"error": "Invalid format, must be 'json' or 'xml'."}, status=400)
+
+
+def assign_expired_auctions_to_highest_bidders():
+    """
+    Processes all expired auctions where the item is still active.
+    For each item:
+    - Finds the highest bid.
+    - Assigns the bidder as the buyer.
+    - Deactivates the item.
+    - Creates a conversation and initial message if not exists.
+
+    Returns:
+        list: A list of dictionaries with item info and status.
+    """
+    now = timezone.now()
+    results = []
+
+    # Get all expired, active items
+    expired_items = Item.objects.filter(active=True, ends__lte=now)
+
+    print(expired_items, flush=True)
+    for item in expired_items:
+        # Find the highest bid
+        highest_bid = Bid.objects.filter(item=item).order_by('-amount').first()
+        if not highest_bid:
+            # No bids placed, mark item as inactive and skip
+            item.active = False
+            item.save()
+            results.append({
+                "item_id": item.item_id,
+                "name": item.name,
+                "message": "Auction ended with no bids. Item remains unsold."
+            })
+            continue
+
+        buyer = highest_bid.bidder
+
+        # Assign buyer and deactivate item
+        item.buyer = buyer
+        item.active = False
+        item.save()
+
+        # Create conversation if not exists
+        conversation, created = Conversations.objects.get_or_create(
+            seller=item.seller,
+            buyer=buyer
+        )
+
+        # Add initial message
+        Messages.objects.create(
+            conversation=conversation,
+            sender=buyer,
+            receiver=item.seller,
+            message=f"Hi, I am {buyer.first_name} and I have just won the auction for {item.name}"
+        )
+
+        results.append({
+            "item_id": item.item_id,
+            "name": item.name,
+            "buyer": buyer.username,
+            "message": f"Auction ended. Buyer set to highest bidder: {buyer.username}"
+        })
+
+    return results

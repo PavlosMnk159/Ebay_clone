@@ -27,18 +27,15 @@ class RegistrationSerializer(serializers.ModelSerializer):
             AFM=validated_data.get('AFM'),
         )
     
+
 class UserDetailsSerialiser(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'country', 'region', 'city', 'postal_code', 'address', 'house_number', 'phone', 'AFM']
+        fields = '__all__'
 
 class LoginSerialiser(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-
-        # Add custom claims
-        token['is_admin'] = user.is_staff
-        token['username'] = user.username 
-
-        return token
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['is_admin'] = self.user.is_staff
+        data['username'] = self.user.username 
+        return data

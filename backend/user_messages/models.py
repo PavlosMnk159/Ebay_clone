@@ -26,18 +26,18 @@ class Conversations(models.Model):
     buyer = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="buyer_conversation")
     created_at = models.DateTimeField(auto_now_add=True)
 
+    deleted_by_sender = models.BooleanField(default=False)
+    deleted_by_receiver = models.BooleanField(default=False)
+
     
 
 class Messages(models.Model):
-    conversation = models.ForeignKey(Conversations, on_delete=models.CASCADE, related_name="message")
-    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="message")
-    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="receiver_message")
+    conversation = models.ForeignKey(Conversations, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="sent_messages")
+    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="received_messages")
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     seen = models.BooleanField(default=False)
-
-    deleted_by_sender = models.BooleanField(default=False)
-    deleted_by_receiver = models.BooleanField(default=False)
 
 
     class Meta:

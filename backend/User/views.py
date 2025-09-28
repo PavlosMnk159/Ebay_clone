@@ -14,6 +14,8 @@ from User.models import CustomUser
 from auctions.models import Bid
 from auctions.serializers import BidSerializer
 
+
+
 class RegisterView(APIView):
     permission_classes = [AllowAny] 
 
@@ -21,40 +23,55 @@ class RegisterView(APIView):
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"detail": "User created successfully"}, status=status.HTTP_201_CREATED)
-        print(serializer.errors) 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            return Response({"success": True, "detail": "User created successfully"}, status=status.HTTP_201_CREATED)         
+        return Response({"success": False, "detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)    
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerialiser
 
 class ViewUserList(APIView):
     """
-    Get users from the users list. You can select which by specifing the page (each page contains 10 users)
+    Get all users as a simple array of objects.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated ,CanViewUserList]
+    permission_classes = [IsAuthenticated, CanViewUserList]
 
     def get(self, request):
-        
-        users = CustomUser.objects.all().values_list('id', 'username', flat=True)
-        
-        #get the page which was requested
-        page = request.GET.get('page', 1)
-        page = int(page)
+        users = CustomUser.objects.filter(is_approved=True)[:100]
 
-        paginator = Paginator(users, 10)
-        page_obj = paginator.get_page(page)
+        serializer = UserDetailsSerialiser(users, many=True)
 
-        res = {
-            'count', paginator.count,
-            'num_pages', paginator.num_pages,
-            'page', page,
-            'results', list(page_obj)   
-        }
-
-        return JsonResponse(res)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
+class ViewInactiveUserList(APIView):
+    """
+    Get all users as a simple array of objects.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, CanViewUserList]
+
+    def get(self, request):
+        users = CustomUser.objects.filter(is_approved=False)[:100]
+
+        serializer = UserDetailsSerialiser(users, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class ViewInactiveUserCount(APIView):
+    """
+    Get all users as a simple array of objects.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, CanViewUserList]
+
+    def get(self, request):
+        user_count = CustomUser.objects.filter(is_approved=False).count()
+
+
+
+
+        return Response({'unapproved_users': user_count}, status=status.HTTP_200_OK)
+    
+
 class ViewUserAccount(APIView):
     """
     View details about a specific users account
@@ -74,7 +91,7 @@ class ViewUserAccount(APIView):
             return Response({"error": "Invalid 'user_id', must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Fetch user or return 404
-        user = get_object_or_404(CustomUser, user_id=user_id)
+        user = get_object_or_404(CustomUser, id=user_id)
 
         serializer = UserDetailsSerialiser(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -114,10 +131,13 @@ class AproveAccount(APIView):
             return Response({"error": "Invalid 'decision', must be a boolean"}, status=status.HTTP_400_BAD_REQUEST)
         
         
-        user = get_object_or_404(CustomUser, user_id=user_id)
+        user = get_object_or_404(CustomUser, id=user_id)
 
         user.is_approved = decision_bool
         user.save()
+
+        if (decision_bool == False):
+            user.delete()
 
         status_text = "approved" if decision_bool else "declined"
         return Response(
@@ -147,7 +167,7 @@ class ViewUserBids(APIView):
         except ValueError:
             return Response({"error": "Invalid 'user_id', must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
         
-        user = get_object_or_404(CustomUser, user_id=user_id)
+        user = get_object_or_404(CustomUser, id=user_id)
 
         if not user:
             return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)

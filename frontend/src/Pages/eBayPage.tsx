@@ -1,9 +1,8 @@
 import fetch_with_auth from "@/Authentication/axios";
-import fetch_with_auth from "@/Authentication/axios";
 import { fetch_get } from "@/config/url";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-
+import { BASE_URL } from "@/config/url";
 
 declare global {
   interface Window {
@@ -37,20 +36,17 @@ interface Product {
     First_Bid: number;
     Number_of_Bids: number;
     Bids: Bid[] | null;
-    started: number;
     ends: number;
     seller: {
         sellerId: string,
         rating: string
     };
     description: string;
-    images: string[]; // Changed from image to images array
-    imageType: string;
-    location: {
-        lat: number,
-        lng: number
-    };
-    city: string;
+    images: string[]; 
+    location: string;
+    country: string;
+    latitude: number;
+    longitude: number;
     isActive: number;
 }
 
@@ -92,19 +88,12 @@ interface Filters {
         mimeType = 'application/xml';
         fileExtension = '.xml';
         break;
-      case 'txt':
-        //backend
-        // fetch data.txt
-        content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-        mimeType = 'text/plain';
-        fileExtension = '.txt';
-        break;
       default:
         //backend
         // fetch data
         content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-        mimeType = 'text/plain';
-        fileExtension = '.txt';
+        mimeType = 'application/xml';
+        fileExtension = '.xml';
     }
     
     // Ensure filename has correct extension
@@ -123,33 +112,6 @@ interface Filters {
   };
 
 
-
-// async function geocodeWithAPI(address: string): Promise<{ lat: number; lng: number } | null> {
-//   try {
-//     const encodedAddress = encodeURIComponent(address);
-//     const response = await fetch(
-//       `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`
-//     );
-    
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
-//     }
-    
-//     const data = await response.json();
-    
-//     if (data && data.length > 0) {
-//       return {
-//         lat: parseFloat(data[0].lat),
-//         lng: parseFloat(data[0].lon)
-//       };
-//     }
-    
-//     return null; // No results found
-//   } catch (error) {
-//     console.error('Geocoding error:', error);
-//     return null;
-//   }
-// }
 
 
 // Simple Map component using Leaflet
@@ -216,45 +178,13 @@ interface BidOfferModalProps {
     isOpen: boolean;
     onClose: () => void;
     onDataChange?: () => Promise<void>; // Add this
-    onDataChange?: () => Promise<void>; // Add this
 }
 
 function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOfferModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
-function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOfferModalProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen || !product) return null;
-    if (!isOpen || !product) return null;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        try {
-            // Handle offer submission logic
-            console.log('Processing offer for:', product.name);
-            
-            // API call for making offer
-            const request_data = {
-                item_id: product.id,
-                amount: amount
-            };
-            
-            try {
-                const res = await fetch_with_auth.post('make-offer', request_data);
-                console.log(res.data);
-                alert('Offer submitted successfully!');
-                
-                // Refresh data after successful operation
-                if (onDataChange) {
-                    await onDataChange();
-                }
-            } catch (e: any) {
-                console.log("Could not submit offer", e.message);
-                alert('Failed to submit offer. Please try again.');
-            }
-            
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -286,13 +216,9 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
             onClose();
         } finally {
             setIsSubmitting(false);
-            setIsSubmitting(false);
         }
     };
 
-    const modalTitle = 'Confirm Offer';
-    const buttonText = 'Confirm Offer';
-    const buttonColor = 'bg-orange-500 hover:bg-orange-600';
     const modalTitle = 'Confirm Offer';
     const buttonText = 'Confirm Offer';
     const buttonColor = 'bg-orange-500 hover:bg-orange-600';
@@ -301,18 +227,12 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
             <div className="bg-white rounded-lg max-w-md w-full mx-4" 
             onClick={(e) => e.stopPropagation()}>
-            <div className="bg-white rounded-lg max-w-md w-full mx-4" 
-            onClick={(e) => e.stopPropagation()}>
                 <div className="p-6">
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
                     {/* Header */}
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-800">{modalTitle}</h3>
                         <button
                             onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                             className="text-gray-500 hover:text-gray-700 text-xl font-bold"
                         >
                             ×
@@ -378,141 +298,6 @@ function BidExtraModal({ product, amount, isOpen, onClose, onDataChange }: BidOf
 }
 
 
-// interface MessageModalProps {
-//     recipient: {
-//         sellerID: string;
-//         rating: string;
-//         product: {
-//             itemID: number;
-//             image: string;
-//             name: string;
-//             Buy_Price: number;
-//         }
-//     };
-
-//     isOpen: boolean;
-//     onClose: () => void;
-//     onSendMessage: (message: string) => void;
-// }
-
-// function MessageModal({ recipient, isOpen, onClose, onSendMessage }: MessageModalProps) {
-//     const [message, setMessage] = useState('');
-//     const [isLoading, setIsLoading] = useState(false);
-
-//     if (!isOpen || !recipient) return null;
-
-//     const handleSendMessage = async () => {
-//         if (!message.trim()) return;
-        
-//         setIsLoading(true);
-//         try {
-//             await onSendMessage(message);
-//             setMessage('');
-//             onClose();
-//         } catch (error) {
-//             console.error('Failed to send message:', error);
-//         } finally {
-//             setIsLoading(false);
-//         }
-//     };
-
-//     const handleKeyPress = (e: React.KeyboardEvent) => {
-//         if (e.key === 'Enter' && !e.shiftKey) {
-//             e.preventDefault();
-//             handleSendMessage();
-//         }
-//     };
-
-//     return (
-//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-//             <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-//                 <div className="p-6">
-//                     {/* Header with close button */}
-//                     <div className="flex justify-between items-start mb-4">
-//                         <h2 className="text-2xl font-bold text-gray-800 pr-2">Send Message</h2>
-//                         <button
-//                             onClick={onClose}
-//                             className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-//                         >
-//                             ×
-//                         </button>
-//                     </div>
-
-//                     <div className="space-y-2">
-//                         {/* Recipient Information */}
-//                         <div className="bg-gray-50 p-2 rounded-lg">
-//                             <h3 className="font-semibold text-gray-800 mb-2">Message To:</h3>
-//                             <div className="flex items-center space-x-3">
-//                                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-//                                     <span className="text-blue-600 font-bold text-lg">
-//                                         {recipient.sellerID.charAt(0).toUpperCase()}
-//                                     </span>
-//                                 </div>
-//                                 <div>
-//                                     <div className="font-medium text-gray-800">{recipient.sellerID}</div>
-//                                 </div>
-//                             </div>
-//                         </div>
-
-//                         {/* Product Reference (if applicable) */}
-//                         {recipient.product && (
-//                             <div className="bg-blue-50 p-2 rounded-lg">
-//                                 <h3 className="font-semibold text-gray-800 mb-2">About Item:</h3>
-//                                 <div className="flex items-center space-x-3">
-//                                     <div className="text-3xl">{recipient.product.image}</div>
-//                                     <div>
-//                                         <div className="font-medium text-gray-800">{recipient.product.name}</div>
-//                                         <div className="text-sm text-gray-600">#{recipient.product.Buy_Price}</div>
-//                                     </div>
-//                                 </div>
-//                             </div>
-//                         )}
-
-//                         {/* Message Input */}
-//                         <div>
-//                             <label htmlFor="message" className="block font-semibold text-gray-800 mb-2">
-//                                 Your Message:
-//                             </label>
-//                             <textarea
-//                                 id="message"
-//                                 value={message}
-//                                 onChange={(e) => setMessage(e.target.value)}
-//                                 onKeyPress={handleKeyPress}
-//                                 placeholder="Type your message here..."
-//                                 rows={6}
-//                                 className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-//                                 disabled={isLoading}
-//                             />
-//                             <div className="text-xs text-gray-500 mt-1">
-//                                 Press Enter to send, Shift+Enter for new line
-//                             </div>
-//                         </div>
-
-//                         {/* Action Buttons */}
-//                         <div className="flex space-x-3">
-//                             <button
-//                                 onClick={handleSendMessage}
-//                                 disabled={!message.trim() || isLoading}
-//                                 className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-//                             >
-//                                 {isLoading ? 'Sending...' : 'Send Message'}
-//                             </button>
-//                             <button
-//                                 onClick={onClose}
-//                                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-//                                 disabled={isLoading}
-//                             >
-//                                 Cancel
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// }
-
-
 interface PurchaseModalProps {
     product: Product | null;
     isOpen: boolean;
@@ -551,12 +336,14 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
                     console.log(res.data);
                     alert('Purchase initiated! You will be redirected to payment.');
                     
+                    
+
                     // Refresh data after successful purchase
                     if (onDataChange) {
                         await onDataChange();
                     }
                 } catch (e: any) {
-                    console.log("Could not buy that item", e.message);
+                    console.log("Could not buy that item:", e.details);
                     alert('Purchase failed. Please try again.');
                 }
             } else {
@@ -637,16 +424,6 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
                                 </p>
                             </div>
                         )}
-                        )}
-
-                        {mode === 'buy' && (
-                            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                                <p className="text-sm text-gray-700">
-                                    You are about to purchase this item for <strong>{product.Buy_Price}</strong>. 
-                                    You will be redirected to complete payment.
-                                </p>
-                            </div>
-                        )}
 
                         {/* Action Buttons */}
                         <div className="flex space-x-3">
@@ -654,22 +431,14 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
                                 type="button"
                                 onClick={onClose}
                                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                                type="button"
-                                onClick={onClose}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
-                                Cancel
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmitting || (mode === 'offer' && !offerAmount.trim())}
                                 className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
-                                type="submit"
-                                disabled={isSubmitting || (mode === 'offer' && !offerAmount.trim())}
-                                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${buttonColor} disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
-                                {isSubmitting ? 'Processing...' : buttonText}
                                 {isSubmitting ? 'Processing...' : buttonText}
                             </button>
                         </div>
@@ -692,9 +461,7 @@ function PurchaseModal({ product, isOpen, onClose, mode, onDataChange }: Purchas
 }
 
 
-
 interface ItemModalProps {
-    isAdmin: boolean;
     isGuest: boolean;
     product: Product | null;
     isOpen: boolean;
@@ -702,10 +469,12 @@ interface ItemModalProps {
     onDataChange?: () => Promise<void>; // Add this
 }
 
-function ItemModal({ isAdmin, isGuest, product, isOpen, onClose, onDataChange }: ItemModalProps) {
+function ItemModal({ isGuest, product, isOpen, onClose, onDataChange }: ItemModalProps) {
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
     const [selectedImageIndex, setSelectedImageIndex] = useState(0); 
+    
+   
 
     if (!isOpen || !product) return null;
 
@@ -722,27 +491,6 @@ function ItemModal({ isAdmin, isGuest, product, isOpen, onClose, onDataChange }:
         onClose();
     };
 
-    const jsonData = [
-        { id: 1, name: "Item 1", category: "electronics" },
-        { id: 2, name: "Item 2", category: "books" },
-        { id: 3, name: "Item 3", category: "clothing" }
-    ];
-    
-    const xmlData = `<?xml version="1.0" encoding="UTF-8"?>
-<items>
-  <item id="1">
-    <name>Item 1</name>
-    <category>electronics</category>
-  </item>
-  <item id="2">
-    <name>Item 2</name>
-    <category>books</category>
-  </item>
-  <item id="3">
-    <name>Item 3</name>
-    <category>clothing</category>
-  </item>
-</items>`;
 
 
     const nextImage = () => {
@@ -778,10 +526,11 @@ function ItemModal({ isAdmin, isGuest, product, isOpen, onClose, onDataChange }:
                             <div>
                                 {/* Image display */}
                                 <div className="relative h-64 w-full mb-4 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
-                                    {product.imageType === 'photo' ? (
+                                    {product.images && product.images.length > 0 ? (
                                         <>
                                         <img 
-                                            src={product.images[selectedImageIndex]} 
+                                        
+                                            src={`${BASE_URL}/${product.images[selectedImageIndex]}`} 
                                             alt={`${product.name} - Image ${selectedImageIndex + 1}`}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
@@ -821,9 +570,9 @@ function ItemModal({ isAdmin, isGuest, product, isOpen, onClose, onDataChange }:
                                     ) : null}
                                     <div 
                                         className={`w-full h-full flex items-center justify-center text-8xl font-bold text-gray-600 bg-gradient-to-br from-blue-100 to-purple-100 ${
-                                        product.imageType === 'letter' ? 'flex' : 'hidden'
+                                        product.images && product.images.length === 0 ? 'flex' : 'hidden'
                                         }`}
-                                        style={product.imageType === 'photo' ? { display: 'none' } : {}}
+                                        style={product.images && product.images.length > 0 ? { display: 'none' } : {}}
                                     >
                                         {product.images[selectedImageIndex]}
                                     </div>
@@ -835,17 +584,17 @@ function ItemModal({ isAdmin, isGuest, product, isOpen, onClose, onDataChange }:
                                     <div className="text-sm text-gray-600">Seller: <span className="font-medium text-blue-600">{product.seller.sellerId}</span>
                                         <span className="text-green-600 ml-2">({product.seller.rating} positive)</span>
                                     </div>
-                                    <div className="text-sm text-gray-600">Location: <span className="font-medium">{product.city}</span></div>
-                                    <div className="text-sm text-gray-600">Coordinates: <span className="font-medium">{product.location.lat}, {product.location.lng}</span></div>
+                                    <div className="text-sm text-gray-600">Location: <span className="font-medium">{product.country}</span></div>
+                                    {/* <div className="text-sm text-gray-600">Coordinates: <span className="font-medium">{product.location.lat}, {product.location.lng}</span></div> */}
                                 </div>
 
                                 {/* Map section */}
-                                {product.location && product.location.lat !== 0 && product.location.lng !== 0 && (
+                                {product.location && product.country && (
                                     <div className="mt-4">
                                         <h4 className="font-medium text-gray-800 mb-2">Seller Location</h4>
                                         <SimpleMap 
-                                            lat={product.location.lat} 
-                                            lng={product.location.lng}
+                                            lat={product.latitude} 
+                                            lng={product.longitude}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
                                             Approximate location for privacy
@@ -919,30 +668,6 @@ function ItemModal({ isAdmin, isGuest, product, isOpen, onClose, onDataChange }:
                                         </button>
                                     )}
                                     
-                                    {isAdmin && (
-                                        <>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    handleDownload(xmlData, 'xml');
-                                                }}
-                                                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
-                                            >
-                                                Download XML
-                                            </button>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    handleDownload(jsonData, 'json');
-                                                }}
-                                                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
-                                            >
-                                                Download JSON
-                                            </button>
-                                        </>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -972,11 +697,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
 
-    const [purchaseProduct, setPurchaseProduct] = useState<Product | null>(null);
-    const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
-    const [purchaseMode, setPurchaseMode] = useState<'buy' | 'offer'>('buy');
-
-    // const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<String[]>([]);
     const [filters, setFilters] = useState<Filters>({});
 
@@ -1002,8 +723,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
     const refreshData = async () => {
         try {
             const data = await fetch_get('/items/');
-            // setProducts(data);
-            alert(data);
+            setProducts(data);
         } catch (error) {
             console.log("Error while refreshing data: ", error);
         }
@@ -1013,8 +733,8 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         const fetch_products = async () => {
             try {
                 const data = await fetch_get('/items/');
-                // setProducts(data);
-                alert(data);    
+                setProducts(data);
+                console.log(data);
 
             } catch (error) {
                 console.log("Error while fetching products: ", error);
@@ -1045,10 +765,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         nav('/admin');
     };
 
- 
-
     const navigateChat = () => {
-        nav('/chatIn')
         nav('/chatIn')
     };
 
@@ -1063,8 +780,7 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
             const queryString = new URLSearchParams(entries as [string, string][]).toString();
             const endpoint = queryString ? `/items/?${queryString}` : `/items/`;
             const data = await fetch_get(endpoint)
-            // setProducts(data);
-            alert(data);
+            setProducts(data);
 
         } catch (error) {
             console.log("Error while applying filters: ", error);
@@ -1075,15 +791,10 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         if (e.key === "Enter"){
             e.preventDefault();
             // applyFilters();
-            // applyFilters();
         }
     };
 
     const handleProductClick = (product: Product) => {
-        if (purchaseProduct != product) {
-            setSelectedProduct(product);
-            setIsModalOpen(true);
-        }
         if (purchaseProduct != product) {
             setSelectedProduct(product);
             setIsModalOpen(true);
@@ -1094,179 +805,29 @@ export function EBayPage({isAdmin, isGuest, onLogout } : {isAdmin : boolean; isG
         setIsModalOpen(false);
         setSelectedProduct(null);
         refreshData();
-        refreshData();
     };
 
-// Updated products array with multiple images
-const products = [
-  {
-    id: 1,
-    name: "The Great Gatsby - Classic Literature",
-    category: "Books",
-    currently: 12,
-    Buy_Price: 16,
-    First_Bid: 12,
-    Number_of_Bids: 2,
-    Bids: null,
-    started: 19092025,
-    ends: 19092025,
-    seller: {
-      sellerId: "BookStore123",
-      rating: "98.5%",
-    },
-    description: "Something something",
-    images: [
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300",
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300",
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300"
-    ],
-    imageType: "photo",
-    location: { lat: 0, lng: 0 },
-    city: "New York, NY",
-    isActive: 1
-  },
-  {
-    id: 2,
-    name: "iPhone 14 Pro - 256GB Space Black",
-    category: "Electronics",
-    currently: 850,
-    Buy_Price: 999,
-    First_Bid: 700,
-    Number_of_Bids: 8,
-    Bids: null,
-    started: 18092025,
-    ends: 25092025,
-    seller: {
-      sellerId: "TechDeals99",
-      rating: "99.2%",
-    },
-    description: "Excellent condition, original box included",
-    images: ["I"], // Single letter
-    imageType: "letter",
-    location: { lat: 34.0522, lng: -118.2437 },
-    city: "Los Angeles, CA",
-    isActive: 1
-  },
-  {
-    id: 3,
-    name: "Vintage Rolex Submariner Watch",
-    category: "Jewelry",
-    currently: 4500,
-    Buy_Price: 6200,
-    First_Bid: 3800,
-    Number_of_Bids: 15,
-    Bids: null,
-    started: 15092025,
-    ends: 22092025,
-    seller: {
-      sellerId: "LuxuryTimepieces",
-      rating: "97.8%",
-    },
-    description: "1985 model, serviced and authenticated",
-    images: [
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300",
-      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=400&h=300"
-    ],
-    imageType: "photo",
-    location: { lat: 41.8781, lng: -87.6298 },
-    city: "Chicago, IL",
-    isActive: 1
-  },
-  {
-    id: 4,
-    name: "Abstract Oil Painting - Original Art",
-    category: "Art",
-    currently: 320,
-    Buy_Price: 450,
-    First_Bid: 250,
-    Number_of_Bids: 6,
-    Bids: null,
-    started: 17092025,
-    ends: 24092025,
-    seller: {
-      sellerId: "ArtisticVisions",
-      rating: "96.4%",
-    },
-    description: "24x36 canvas, signed by artist",
-    images: ["https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300"],
-    imageType: "photo",
-    location: { lat: 39.7392, lng: -104.9903 },
-    city: "Denver, CO",
-    isActive: 1
-  },
-  {
-    id: 5,
-    name: "Nike Air Jordan 1 Retro High OG",
-    category: "Fashion",
-    currently: 180,
-    Buy_Price: 0,
-    First_Bid: 150,
-    Number_of_Bids: 4,
-    Bids: null,
-    started: 16092025,
-    ends: 23092025,
-    seller: {
-      sellerId: "SneakerHead42",
-      rating: "94.7%",
-    },
-    description: "Size 10.5, worn twice, excellent condition",
-    images: [
-      "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=400&h=300",
-      "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&h=300",
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300",
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300"
-    ],
-    imageType: "photo",
-    location: { lat: 25.7617, lng: -80.1918 },
-    city: "Miami, FL",
-    isActive: 1
-  },
-  {
-    id: 6,
-    name: "Fender Stratocaster Electric Guitar",
-    category: "Musical Instruments",
-    currently: 720,
-    Buy_Price: 950,
-    First_Bid: 600,
-    Number_of_Bids: 11,
-    Bids: null,
-    started: 14092025,
-    ends: 21092025,
-    seller: {
-      sellerId: "MusicMaker88",
-      rating: "98.9%",
-    },
-    description: "Sunburst finish, includes hard case",
-    images: ["https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&h=300"],
-    imageType: "photo",
-    location: { lat: 36.1627, lng: -86.7816 },
-    city: "Nashville, TN",
-    isActive: 1
-  },
-  {
-    id: 7,
-    name: "Canon EOS R5 Mirrorless Camera",
-    category: "Electronics",
-    currently: 2800,
-    Buy_Price: 3200,
-    First_Bid: 2500,
-    Number_of_Bids: 9,
-    Bids: null,
-    started: 13092025,
-    ends: 20092025,
-    seller: {
-      sellerId: "PhotoPro2024",
-      rating: "99.6%",
-    },
-    description: "Body only, low shutter count",
-    images: ["C"], // Single letter
-    imageType: "letter",
-    location: { lat: 47.6062, lng: -122.3321 },
-    city: "Seattle, WA",
-    isActive: 1
-  }
-  // ... add more products as needed
-];
+    const jsonData = [
+        { id: 1, name: "Item 1", category: "electronics" },
+        { id: 2, name: "Item 2", category: "books" },
+        { id: 3, name: "Item 3", category: "clothing" }
+    ];
+    
+    const xmlData = `<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item id="1">
+    <name>Item 1</name>
+    <category>electronics</category>
+  </item>
+  <item id="2">
+    <name>Item 2</name>
+    <category>books</category>
+  </item>
+  <item id="3">
+    <name>Item 3</name>
+    <category>clothing</category>
+  </item>
+</items>`;
 
 
     {/* Products page numbers */}
@@ -1335,7 +896,6 @@ const products = [
                                 />
 
                                 <button
-                                    // onClick={applyFilters}
                                     // onClick={applyFilters}
                                     className="bg-blue-600 text-white px-6 py-2 rounded-r-lg hover:bg-blue-700 transition-colors"
                                 >
@@ -1449,10 +1009,35 @@ const products = [
                     {/* Main Content - Product Grid */}
                     <div className="flex-1">
                         <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-2xl font-semibold text-gray-800">Books & Magazines</h2>
+                        <h2 className="text-2xl font-semibold text-gray-800">Books & Magazines</h2>
+                        {isAdmin && (
+                            <div className="flex gap-2">
+                            <button
+                                onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDownload(xmlData, 'xml');
+                                }}
+                                className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                            >
+                                Download XML
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDownload(jsonData, 'json');
+                                }}
+                                className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                            >
+                                Download JSON
+                            </button>
+                            </div>
+                        )}
                             <div className="text-sm text-gray-600">
                                 {products.length} results
                             </div>
+
                         </div>
 
 
@@ -1473,10 +1058,10 @@ const products = [
                                     >
                                         {/* Image display - shows first image or letter */}
                                         <div className="h-32 w-full mb-3 flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden relative">
-                                        {product.imageType === 'photo' ? (
+                                        {product.images && product.images.length > 0 ? (
                                             <>
                                             <img 
-                                                src={product.images[0]} 
+                                                src={`${BASE_URL}/${product.images[0]}`} 
                                                 alt={product.name}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -1497,9 +1082,9 @@ const products = [
                                         ) : null}
                                         <div 
                                             className={`w-full h-full flex items-center justify-center text-4xl font-bold text-gray-600 bg-gradient-to-br from-blue-100 to-purple-100 ${
-                                            product.imageType === 'letter' ? 'flex' : 'hidden'
+                                            product.images && product.images.length === 0 ? 'flex' : 'hidden'
                                             }`}
-                                            style={product.imageType === 'photo' ? { display: 'none' } : {}}
+                                            style={product.images && product.images.length > 0 ? { display: 'none' } : {}}
                                         >
                                             {product.images[0]}
                                         </div>
@@ -1519,10 +1104,7 @@ const products = [
                                         className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors text-sm"
                                         onClick={async (e) => {
                                             e.preventDefault();
-                                        onClick={async (e) => {
-                                            e.preventDefault();
                                             e.stopPropagation();
-                                            openPurchaseModal(product, 'buy');
                                             openPurchaseModal(product, 'buy');
                                         }}
                                     >
@@ -1589,7 +1171,6 @@ const products = [
 
             {/* Modal with refresh callback */}
             <ItemModal
-                isAdmin={isAdmin}
                 isGuest={isGuest}
                 product={selectedProduct}
                 isOpen={isModalOpen}
@@ -1604,18 +1185,7 @@ const products = [
                 onClose={closePurchaseModal}
                 mode={purchaseMode}
                 onDataChange={refreshData} // Pass the refresh function
-                onDataChange={refreshData} // Pass the refresh function
             />
-
-            {/* Purchase Modal with refresh callback */}
-            <PurchaseModal
-                product={purchaseProduct}
-                isOpen={isPurchaseModalOpen}
-                onClose={closePurchaseModal}
-                mode={purchaseMode}
-                onDataChange={refreshData} // Pass the refresh function
-            />
-
 
         </div>
     );

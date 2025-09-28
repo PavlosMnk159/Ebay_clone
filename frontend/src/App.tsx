@@ -7,10 +7,17 @@ import { registerUser } from "./Authentication/auth.ts";
 
 import { LoginFormData, RegisterFormData } from "./types/auth_types";
 
+
+import { AdminPage } from './Pages/Admin/AdminPage.tsx';
+import { RequestPage } from './Pages/Admin/RequestsPage.tsx';
   
-import { LoginPage } from './Pages/LoginPage.tsx';
-import { RegisterPage } from './Pages/RegisterPage.tsx';
-import { WaitingPage } from './Pages/WaitingPage.tsx';
+import { LoginPage } from './Pages/Login/LoginPage.tsx';
+import { RegisterPage } from './Pages/Login/RegisterPage.tsx';
+import { WaitingPage } from './Pages/Login/WaitingPage.tsx';
+
+import { ChatOutPage } from './Pages/Chat/ChatOutPage.tsx';
+import { ChatInPage } from "./Pages/Chat/ChatInPage.tsx";
+
 
 import { EBayPage } from './Pages/eBayPage.tsx';
 import { MakeAuction } from './Pages/MakeAuctionPage.tsx';
@@ -19,12 +26,6 @@ import { ItemBidPage } from './Pages/ItemBidPage.tsx'
 import { BidPage } from './Pages/myBidPage.tsx'
 
 
-import { AdminPage } from './Pages/AdminPage.tsx';
-import { RequestPage } from './Pages/RequestsPage.tsx';
-// this is a comment
-
-import { ChatOutPage } from './Pages/ChatOutPage.tsx';
-import { ChatInPage } from "./Pages/ChatInPage.tsx";
 
 function MainApp() {
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
@@ -115,23 +116,15 @@ function MainApp() {
 
   const handleLogin = async (data: LoginFormData) => {
     const response = await loginUser(data);
-    setIsLoggedIn(true);
-    setIsAdmin(true);
-    localStorage.setItem('is_admin', 'true');
-    localStorage.setItem('is_logged_in', 'true');
-
-    localStorage.setItem('currPage', '/homepage');
-
-    // setIsGuest(true);
-    // localStorage.setItem('is_guest', 'true');
-
     if (response.success) {
-        // set logged
-
-        // if Admin 
-        //   give admin privlege also
-        //   console.log("Admin logged in successfully!");
-        //   console.log(data.username);
+      setIsLoggedIn(true);
+      localStorage.setItem('is_logged_in', 'true');
+      localStorage.setItem('currPage', '/homepage');
+      
+      if (response.is_admin){
+        setIsAdmin(true);
+        localStorage.setItem('is_admin', 'true');
+      }
     } else {
       alert("Login failed, please try again.");
     }
@@ -148,14 +141,20 @@ function MainApp() {
   }
 
   const handleRegister = async (data: RegisterFormData) => {
-    // backend
-    // einai auto sosto post?
     const response = await registerUser(data);
     if (response.success) {
       setIsRegister(true);
       navigate('/waiting');
     } else {
-      alert("Registration failed");
+      const errors = response.message?.detail;
+      if (errors) {
+        // Get first field and its first message
+        const firstField = Object.keys(errors)[0];
+        const firstMessage = (errors[firstField] as string[])[0];
+        alert(`${firstField}: ${firstMessage}`);
+      } else {
+        alert("Registration failed");
+      }
     }
   };
 

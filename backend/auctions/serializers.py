@@ -1,7 +1,9 @@
 from rest_framework import serializers
-from .models import Category, Item, Bid, Visit
+from .models import Category, Item, Bid, Visit, ItemImage
 from User.models import CustomUser
 from django.utils import timezone
+
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,40 +32,40 @@ class CategoryNameField(serializers.SlugRelatedField):
         super().__init__(slug_field='name', queryset=Category.objects.all(), **kwargs)
 
 class AuctionCreation(serializers.ModelSerializer):
-    """
-    Parses all the data required for the creation of an auction item
-    """
-    categories = CategoryNameField(many=True)
-    currently = serializers.DecimalField(max_digits=10, decimal_places=2)
-    buy_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
-    started = serializers.DateTimeField(default=timezone.now)
-    ends = serializers.DateTimeField(
-        input_formats=[
-            "%Y-%m-%d %H:%M:%S",  # "2025-09-22 15:30:00"
-            "%Y-%m-%d",            # "2025-09-22" time defaults to 00:00:00
-        ]
+    categories = serializers.ListField(
+        child=serializers.CharField(max_length=100), write_only=True
+    )
+    images = serializers.ListField(
+        child=serializers.ImageField(), write_only=True, required=False
     )
 
     class Meta:
         model = Item
         fields = [
-            'item_id', 'name', 'categories', 'currently', 'buy_price', 'started', 'ends'
+            'name', 'categories', 'currently', 'buy_price', 'first_bid', 
+            'number_of_bids', 'location', 'latitude', 'longitude', 
+            'country', 'started', 'ends', 'description', 'images'
         ]
-
-
 
     def create(self, validated_data):
         request = self.context.get('request')
-        categories = validated_data.pop('categories', [])
+        categories_data = validated_data.pop('categories', [])
+        images_data = validated_data.pop('images', [])
 
+        # Handle categories
         category_objs = []
-        for name in categories:
+        for name in categories_data:
             category, created = Category.objects.get_or_create(name=name)
             category_objs.append(category)
-        
+
+        # Create item
         item = Item.objects.create(seller=request.user, **validated_data)
-        
         item.categories.set(category_objs)
+
+        # Handle images
+        for image in images_data:
+            ItemImage.objects.create(item=item, image=image)
+
         return item
     
 
@@ -82,16 +84,27 @@ class ItemSerializer(serializers.ModelSerializer):
     location = serializers.SerializerMethodField()
     city = serializers.CharField(source='location')  # assuming "location" field in model is city name
     isActive = serializers.IntegerField(source='active')
-    image = serializers.CharField(default="📚")  # customize this if you have image field
     time_left = serializers.SerializerMethodField() 
-    first_image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    ends = serializers.DateTimeField(
+        input_formats=[
+            "%Y-%m-%dT%H:%M:%S.%fZ",  # 2025-09-27T10:00:00.123456Z
+            "%Y-%m-%dT%H:%M:%S.%f",   # 2025-09-27T10:00:00.123456
+            "%Y-%m-%dT%H:%M:%S",      # 2025-09-27T10:00:00
+            "%Y-%m-%dT%H:%M",         # 2025-09-27T10:00
+            "%Y-%m-%d %H:%M:%S",      # 2025-09-27 10:00:00
+            "%Y-%m-%d %H:%M",         # 2025-09-27 10:00
+            "%Y-%m-%d",               # 2025-09-27 (no time, defaults to 00:00:00)
+        ],
+        required=True
+    )
 
     class Meta:
         model = Item
         fields = [
             'id', 'name', 'category', 'currently', 'Buy_Price', 'First_Bid',
             'Number_of_Bids', 'Bids', 'started', 'ends', 'time_left', 'seller', 'description',
-            'image', 'location', 'city', 'isActive', 'first_image'
+            'location', 'city', 'isActive', 'images'
         ]
 
     def get_category(self, obj):

@@ -60,4 +60,49 @@
     <Phone>+306981234567</Phone>
     <AFM>987654321</AFM>
   </User>
+  <User>
+    <Username>new_user1</Username>
+    <Password>password1</Password>
+    <Email>new1@example.com</Email>
+    <FirstName>Alice</FirstName>
+    <LastName>Johnson</LastName>
+    <Country>Greece</Country>
+    <Region>Attica</Region>
+    <City>Athens</City>
+    <PostalCode>10400</PostalCode>
+    <Address>Oak Street</Address>
+    <HouseNumber>10</HouseNumber>
+    <Phone>+306900000003</Phone>
+    <AFM>100000003</AFM>
+</User>
+<User>
+    <Username>new_user2</Username>
+    <Password>password2</Password>
+    <Email>new2@example.com</Email>
+    <FirstName>Bob</FirstName>
+    <LastName>Smith</LastName>
+    <Country>Greece</Country>
+    <Region>Thessaloniki</Region>
+    <City>Thessaloniki</City>
+    <PostalCode>54622</PostalCode>
+    <Address>Pine Street</Address>
+    <HouseNumber>20</HouseNumber>
+    <Phone>+306900000004</Phone>
+    <AFM>100000004</AFM>
+</User>
+<User>
+    <Username>new_user3</Username>
+    <Password>password3</Password>
+    <Email>new3@example.com</Email>
+    <FirstName>Charlie</FirstName>
+    <LastName>Brown</LastName>
+    <Country>Greece</Country>
+    <Region>Attica</Region>
+    <City>Patras</City>
+    <PostalCode>26221</PostalCode>
+    <Address>Maple Street</Address>
+    <HouseNumber>5</HouseNumber>
+    <Phone>+306900000005</Phone>
+    <AFM>100000005</AFM>
+</User>
 </Users>

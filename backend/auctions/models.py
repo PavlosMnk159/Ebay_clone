@@ -22,7 +22,7 @@ class Item(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
-    started = models.DateTimeField()
+    started = models.DateTimeField(default=timezone.now)
     ends = models.DateTimeField(db_index=True) # This is indexed so it can efficiently be queried when an auction item expires
     seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='items_for_sale')
     description = models.TextField(null=True, blank=True)

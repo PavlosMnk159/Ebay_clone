@@ -1,6 +1,24 @@
 import fetch_with_auth from "@/Authentication/axios";
-import { useState } from "react";
+import { fetch_get } from "@/config/url";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+
+interface Bid {
+    bidder: Bidder;
+    time: number; //time the bid was made
+    amount: number;
+
+}
+
+interface Bidder {
+    userID: string;
+    rating: number;
+    location: {
+        lat: number,
+        lng: number
+    }
+    country: string;
+}
 
 
 async function geocodeWithAPI(address: string): Promise<{ lat: number; lng: number } | null> {
@@ -56,43 +74,74 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
   const [sellingData, setSellingData] = useState({
     name: "",
     categories: [] as string[],
-    currently: "",
-    buy_price: "",
-    ends: "",
+    currently: 0,
+    Buy_Price: 0 ,
+    First_Bid: 0,
+    Number_of_Bids: 0,
+    Bids: [] as Bid[],
+    ends: 0,
+    seller: {
+        sellerId: "",
+        rating: ""
+    },
     description: "",
-    image: null as File | null,
-    location: ""
+    images: [] as File[], 
+    lat: 0,
+    lng: 0,
+    location: "",
+    country: "",
+    isActive: false
+
   });
 
   // Backend
   // fetch categories
 
-  const categories = [
-    "Books & Magazines",
-    "Textbooks",
-    "Fiction",
-    "Non-Fiction",
-    "Children's Books",
-    "Comics & Graphic Novels",
-    "Electronics",
-    "Fashion",
-    "Home & Garden",
-    "Sports & Outdoors",
-    "Toys & Games",
-    "Collectibles"
-  ];
+  const [categories, setCategories] = useState<string[]>([]);
 
-  const handleSellingDataChange = (field: string, value: string | string[] | boolean | File | null) => {
+  useEffect(() => {
+
+      const fetch_categories = async () => {
+          try {
+              const data = await fetch_get('/categories');
+              setCategories(data);
+              console.log(data);
+          } catch (error) {
+              console.log("Error while fetching categories: ", error);
+          }
+      }
+
+      fetch_categories();
+  }, []);
+
+  const handleSellingDataChange = (field: string, value: number | string | string[] | File[] | null) => {
     setSellingData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
+  // Fixed: Handle multiple image uploads properly
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    handleSellingDataChange('image', file);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    // Add new files to existing images instead of replacing them
+    handleSellingDataChange('images', [...sellingData.images, ...files]);
   };
+
+  // New function to remove a specific image
+  const removeImage = (indexToRemove: number) => {
+    const updatedImages = sellingData.images.filter((_, index) => index !== indexToRemove);
+    handleSellingDataChange('images', updatedImages);
+  };
+
+  // New function to clear all images
+  const clearAllImages = () => {
+    handleSellingDataChange('images', []);
+    // Reset file input
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  };
+
 
   const handleLocationSearch = async (searchLocation : string) => {
     if (!searchLocation.trim()) return;
@@ -119,7 +168,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
     console.log("Starting auction with data:", sellingData);
     // alert("Auction has been created. You can make it live in your Autions List");
 
-    handleLocationSearch(sellingData.location);
+    handleLocationSearch(sellingData.location + ', ' + sellingData.country);
 
     try {
 
@@ -132,15 +181,26 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
         // Reset form after successful submission
         setSellingData({
           name: "",
-          categories: [],
-          currently: "",
-          buy_price: "",
-          ends: "",
+          categories: [] as string[],
+          currently: 0,
+          Buy_Price: 0,
+          First_Bid: 0,
+          Number_of_Bids: 0,
+          Bids: [] as Bid[],
+          ends: 0,
+          seller: {
+              sellerId: "",
+              rating: ""
+          },
           description: "",
-          image: null,
-          location: ""
-        });
+          images: [] as File[], 
+          lat: 0,
+          lng: 0,
+          location: "",
+          country: "",
+          isActive: false
 
+              });
       }
 
     } catch(e: any) {
@@ -151,9 +211,6 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
       }
     }
 
-
-
-    
     // Reset file input
     const fileInput = document.getElementById('image-upload') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
@@ -292,50 +349,76 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
               </p>
             </div>
 
-            {/* Image Upload */}
+            {/* Enhanced Image Upload Section */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Item Image (Optional)
+                Item Images (Optional) - {sellingData.images.length} uploaded
               </label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
                 <input
                   id="image-upload"
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleImageUpload}
                   className="hidden"
                 />
                 
-                {sellingData.image ? (
+                {sellingData.images.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-center">
-                      <img
-                        src={URL.createObjectURL(sellingData.image)}
-                        alt="Preview"
-                        className="max-w-xs max-h-48 rounded-lg shadow-md"
-                      />
+                    {/* Image Grid Display */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {sellingData.images.map((file, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            title="Remove this image"
+                          >
+                            ×
+                          </button>
+                          <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      📷 {sellingData.image.name}
-                    </p>
-                    <div className="flex gap-3 justify-center">
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 justify-center flex-wrap">
                       <label
                         htmlFor="image-upload"
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+                        className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer inline-flex items-center gap-2"
                       >
-                        Change Image
+                        <span>📷</span>
+                        Add More Images
                       </label>
                       <button
                         type="button"
-                        onClick={() => {
-                          handleSellingDataChange('image', null);
-                          const fileInput = document.getElementById('image-upload') as HTMLInputElement;
-                          if (fileInput) fileInput.value = '';
-                        }}
-                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                        onClick={clearAllImages}
+                        className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors inline-flex items-center gap-2"
                       >
-                        Remove Image
+                        <span>🗑️</span>
+                        Clear All Images
                       </button>
+                    </div>
+                    
+                    {/* Images Info */}
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        ✅ {sellingData.images.length} image{sellingData.images.length !== 1 ? 's' : ''} uploaded
+                        {sellingData.images.length > 0 && (
+                          <span className="ml-2">
+                            ({(sellingData.images.reduce((total, file) => total + file.size, 0) / 1024 / 1024).toFixed(1)} MB total)
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -346,18 +429,32 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
                         htmlFor="image-upload"
                         className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer inline-block font-medium"
                       >
-                        Choose Image
+                        Choose Images
                       </label>
                     </div>
                     <p className="text-sm text-gray-500">
-                      Upload a clear photo of your item to attract more bidders
+                      Upload clear photos of your item to attract more bidders
+                      <br />
+                      You can select multiple images at once
                     </p>
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                Supported formats: JPG, PNG, GIF. Max file size: 5MB
-              </p>
+              
+              <div className="mt-3 space-y-1">
+                <p className="text-sm text-gray-500">
+                  • Supported formats: JPG, PNG, GIF
+                </p>
+                <p className="text-sm text-gray-500">
+                  • Max file size per image: 5MB
+                </p>
+                <p className="text-sm text-gray-500">
+                  • You can add as many images as you want
+                </p>
+                <p className="text-sm text-gray-500">
+                  • Click "Add More Images" to upload additional photos
+                </p>
+              </div>
             </div>
 
             {/* Details */}
@@ -367,7 +464,7 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
               </label>
               <input
                 type="text"
-                placeholder="Enter a finisehd date"
+                placeholder="Enter a finished date"
                 className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                 value={sellingData.ends}
                 onChange={(e) => handleSellingDataChange('ends', e.target.value)}
@@ -378,9 +475,9 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Description
               </label>
-              <input
-                type="text"
-                placeholder="Enter a descriptive name for your item"
+              <textarea
+                placeholder="Enter a detailed description of your item"
+                rows={4}
                 className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                 value={sellingData.description}
                 onChange={(e) => handleSellingDataChange('description', e.target.value)}
@@ -394,17 +491,19 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
             {/* Details */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Itme's Location *
+                Item's Location *
               </label>
               <input
                 type="text"
                 placeholder="Enter the location of the item"
                 className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                value={sellingData.location}
-                onChange={(e) => {handleSellingDataChange('location', e.target.value);
-                  // handleLocationSearch("Paris, France");
+                value={sellingData.country}
+                onChange={(e) => {handleSellingDataChange('country', e.target.value);
                 }}
               />
+              <p className="text-sm text-gray-500 mt-2">
+                  Input: City, Country      (example:  Athens, Greece)  
+                </p>
             </div>
 
             {/* Pricing Section */}
@@ -434,53 +533,25 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
               </div>
               
 
-              {/* Target Price with Toggle */}
+              {/* Current Best Price */}
               <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Buy It Now Price (EUR)
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">Enable Buy It Now:</span>
-                    <button
-                      onClick={() => handleSellingDataChange('buy_price', !sellingData.buy_price)}
-                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                        sellingData.buy_price ? 'bg-green-600' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-lg ${
-                          sellingData.buy_price ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-                
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Buy Now Price
+                </label>
                 <div className="relative">
-                  <span className={`absolute left-3 top-4 text-lg ${
-                    !sellingData.buy_price ? 'text-gray-400' : 'text-gray-500'
-                  }`}>€</span>
+                  <span className="absolute left-3 top-4 text-gray-500 text-lg">€</span>
                   <input
                     type="number"
                     step="0.01"
                     min="0.01"
                     placeholder="0.00"
-                    disabled={!sellingData.buy_price}
-                    className={`w-full pl-8 p-4 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg ${
-                      !sellingData.buy_price 
-                        ? 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400' 
-                        : 'bg-white border-gray-300'
-                    }`}
-                    value={sellingData.buy_price}
-                    onChange={(e) => handleSellingDataChange('buy_price', e.target.value)}
+                    className="w-full pl-8 p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                    value={sellingData.Buy_Price}
+                    onChange={(e) => handleSellingDataChange('Buy_Price', e.target.value)}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  {sellingData.buy_price 
-                    ? "Buyers can purchase immediately at this price, ending the auction"
-                    : "Toggle on to allow instant purchases at a fixed price"
-                  }
+                  This price will end the auction automatically!
                 </p>
               </div>
 
@@ -493,15 +564,15 @@ export function MakeAuction({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
                 <h4 className="font-semibold text-green-800 mb-2">✅ Auction Summary</h4>
                 <div className="text-sm text-green-700 space-y-1">
                   <p><strong>Item:</strong> {sellingData.name}</p>
-                  <p><strong>Category:</strong> {sellingData.categories}</p>
+                  <p><strong>Category:</strong> {sellingData.categories.join(', ')}</p>
                   <p><strong>Starting Bid:</strong> €{sellingData.currently}</p>
-                  {sellingData.buy_price && sellingData.buy_price && (
-                    <p><strong>Buy It Now:</strong> €{sellingData.buy_price}</p>
+                  {sellingData.Buy_Price && (
+                    <p><strong>Buy It Now:</strong> €{sellingData.Buy_Price}</p>
                   )}
-                  <p><strong>Reserve Price:</strong> €{sellingData.currently}</p>
-                  <p><strong>Location</strong> {sellingData.location}</p>
-                  {sellingData.image && (
-                    <p><strong>Image:</strong> ✅ Uploaded ({sellingData.image.name})</p>
+                  <p><strong>Starting Price:</strong> €{sellingData.currently}</p>
+                  <p><strong>Location:</strong> {sellingData.location}, {sellingData.country}</p>
+                  {sellingData.images && sellingData.images.length > 0 && (
+                    <p><strong>Images:</strong> ✅ {sellingData.images.length} uploaded</p>
                   )}
                 </div>
               </div>

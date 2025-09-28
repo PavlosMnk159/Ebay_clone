@@ -10,9 +10,10 @@ from django.contrib.auth.hashers import make_password
 from django.utils.timezone import make_aware
 from django.contrib.auth.models import Permission
 from faker import Faker
+from django.core.files import File
 
 from User.models import CustomUser
-from auctions.models import Item, Bid, Category
+from auctions.models import Item, Bid, Category, ItemImage
 
 
 
@@ -83,6 +84,7 @@ def load_users_from_xml(file_path):
                 house_number=int(user_el.findtext('HouseNumber') or 0),
                 phone=user_el.findtext('Phone'),
                 AFM=int(user_el.findtext('AFM') or 0),
+                is_approved=True,
             )
             print(f"Created user: {user.username}")
 
@@ -215,6 +217,9 @@ def load_items_from_xml(path):
                     active=is_active,
                 )
                 items_to_create.append(item)
+                        # Initialize temporary storage
+
+
 
                 # Handle bids
                 bids_tag = item_el.find('Bids')
@@ -265,6 +270,7 @@ def load_items_from_xml(path):
         except Exception as e:
             print(f"Error during bulk save for {file}: {e}")
 
+
         print(f"Processed {processed_count} items, skipped {skipped_count}, errors {error_count}")
 
 def create_admin():
@@ -290,7 +296,7 @@ def create_admin():
     user.is_superuser = True
     user.save()
 
-def load_categories(file_path="categories.xml"):
+def load_categories(file_path="data/test_categories/categories.xml"):
     tree = ET.parse(file_path)
     root = tree.getroot()
 
@@ -299,3 +305,131 @@ def load_categories(file_path="categories.xml"):
         Category.objects.get_or_create(name=name)
 
     print("Categories loaded successfully")
+
+
+def load_items_from_xml_immediate(path):
+    print("Loading Items Immediately...")
+
+    for file in os.listdir(path):
+        if not file.endswith('.xml'):
+            continue
+
+        print(f"\nProcessing file: {file}")
+        tree = ET.parse(os.path.join(path, file))
+        root = tree.getroot()
+
+        dt_format = "%b-%d-%y %H:%M:%S"
+
+        for item_el in root.findall('Item'):
+            try:
+                # ----------------------
+                # Extract basic item info
+                # ----------------------
+                item_id = item_el.get('ItemID')
+                name = item_el.findtext('Name')
+                currently = parse_price(item_el.findtext('Currently'))
+                buy_price = parse_price(item_el.findtext('Buy_Price'))
+                first_bid = parse_price(item_el.findtext('First_Bid'))
+                country = item_el.findtext('Country')
+                description = item_el.findtext('Description')
+                number_of_bids = int(item_el.findtext('Number_of_Bids') or 0)
+
+                started_dt = make_aware(datetime.strptime(item_el.findtext('Started'), dt_format))
+                ends_dt = make_aware(datetime.strptime(item_el.findtext('Ends'), dt_format))
+
+                location_el = item_el.find('Location')
+                latitude = float(location_el.attrib.get('Latitude', 0)) if location_el is not None else None
+                longitude = float(location_el.attrib.get('Longitude', 0)) if location_el is not None else None
+                city = location_el.text.strip() if location_el is not None and location_el.text else ""
+
+                # ----------------------
+                # Handle seller
+                # ----------------------
+                seller_tag = item_el.find('Seller')
+                seller_id = seller_tag.attrib.get('UserID') if seller_tag is not None else None
+
+                seller = CustomUser.objects.filter(Q(username=seller_id) | Q(email=seller_id)).first()
+                if not seller:
+                    seller = create_random_user(seller_id, set())  # your function to create a user immediately
+                    if seller:
+                        seller.save()
+                    else:
+                        print(f"Skipping item {item_id}, cannot create seller {seller_id}")
+                        continue
+
+                is_active = True if file == "custom_items.xml" else False
+
+                # ----------------------
+                # Create Item immediately
+                # ----------------------
+                item = Item(
+                    item_id=item_id,
+                    name=name,
+                    currently=currently,
+                    buy_price=buy_price,
+                    first_bid=first_bid,
+                    number_of_bids=number_of_bids,
+                    location=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    country=country,
+                    started=started_dt,
+                    ends=ends_dt,
+                    seller=seller,
+                    description=description,
+                    active=is_active
+                )
+                item.save()  # save immediately
+                print(f"Created Item: {item.name} (ID: {item.item_id})")
+
+                category_name = item_el.findtext('Category')
+                if category_name:
+                    category_name = category_name.strip()
+                    category_obj = Category.objects.filter(name=category_name).first()
+                    if category_obj:
+                        item.categories.add(category_obj)
+                        print(f"  Added existing Category: {category_name}")
+                    else:
+                        print(f"  Skipping non-existing Category: {category_name}")
+
+
+                # ----------------------
+                # Create ItemImages immediately
+                # ----------------------
+                images_tag = item_el.find('Images')
+                if images_tag is not None:
+                    for img_el in images_tag.findall('Image'):
+                        if img_el.text:
+                            image_path = img_el.text.strip()
+                            item_image = ItemImage(item=item, image=image_path)
+                            item_image.save()
+                            print(f"  Added Image: {image_path}")
+
+                # ----------------------
+                # Create Bids immediately
+                # ----------------------
+                bids_tag = item_el.find('Bids')
+                if bids_tag is not None:
+                    for bid_el in bids_tag.findall('Bid'):
+                        bidder_tag = bid_el.find('Bidder')
+                        if bidder_tag is None:
+                            continue
+
+                        bidder_id = bidder_tag.attrib.get('UserID')
+                        bidder = CustomUser.objects.filter(Q(username=bidder_id) | Q(email=bidder_id)).first()
+                        if not bidder:
+                            bidder = create_random_user(bidder_id)
+                            if bidder:
+                                bidder.save()
+                            else:
+                                continue  # skip this bid if bidder can't be created
+
+                        bid_time = make_aware(datetime.strptime(bid_el.findtext('Time'), dt_format))
+                        bid_amount = parse_price(bid_el.findtext('Amount'))
+
+                        bid = Bid(item=item, bidder=bidder, time=bid_time, amount=bid_amount)
+                        bid.save()
+                        print(f"  Added Bid: {bid_amount} by {bidder.username}")
+
+            except Exception as e:
+                print(f"Error processing item {item_el.get('ItemID')}: {e}")

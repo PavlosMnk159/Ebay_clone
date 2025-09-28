@@ -1,0 +1,118 @@
+<Items>
+    <Item ItemID="1">
+    <Name>The Great Gatsby - Classic Literature</Name>
+    <Category>Books</Category>
+    <Currently>$12.00</Currently>
+    <Buy_Price>$15.00</Buy_Price>
+    <First_Bid>$10.00</First_Bid>
+    <Number_of_Bids>3</Number_of_Bids>
+    <Bids />
+    <Location Latitude="40.7128" Longitude="-74.0060">New York, NY</Location>
+    <Country>USA</Country>
+    <Started>Sep-19-25 00:00:00</Started>
+    <Ends>Sep-25-26 00:00:00</Ends>
+    <Seller Rating="98.5%" UserID="BookStore123" />
+    <Description>A timeless classic of American literature. This beautiful hardcover edition features the original cover design and includes an introduction by a renowned literary scholar.</Description>
+    <Images>
+        <Image>items/gatsby.jpg</Image>
+    </Images>
+    </Item>
+
+    <Item ItemID="2">
+    <Name>Lord of the rings</Name>
+    <Category>Books</Category>
+    <Currently>$10.00</Currently>
+    <Buy_Price>$15.00</Buy_Price>
+    <First_Bid>$10.00</First_Bid>
+    <Number_of_Bids>0</Number_of_Bids>
+    <Bids />
+    <Location Latitude="40.7128" Longitude=-"74.0060">New York, NY</Location>
+    <Country>USA</Country>
+    <Started>Sep-19-25 00:00:00</Started>
+    <Ends>Sep-20-26 00:00:00</Ends>
+    <Seller Rating="98.5%" UserID="BookStore123" />
+    <Description>Something something</Description>
+    </Item>
+
+    <Item ItemID="3">
+    <Name>Harry POTter</Name>
+    <Category>Books</Category>
+    <Currently>$10.00</Currently>
+    <Buy_Price>$16.00</Buy_Price>
+    <First_Bid>$10.00</First_Bid>
+    <Number_of_Bids>0</Number_of_Bids>
+    <Bids />
+    <Location>New York</Location>
+    <Country>USA</Country>
+    <Started>Sep-19-25 00:00:00</Started>
+    <Ends>Sep-25-26 00:00:00</Ends>
+    <Seller Rating="98.5%" UserID="BookStore123" />
+    <Description>Something something</Description>
+    
+    </Item>
+    <Item ItemID="4">
+    <Name>Vintage Comic Book</Name>
+    <Category>Books</Category>
+    <Currently>$35.00</Currently>
+    <Buy_Price>$50.00</Buy_Price>
+    <First_Bid>$25.00</First_Bid>
+    <Number_of_Bids>2</Number_of_Bids>
+    <Bids>
+      <Bid>
+        <Bidder Rating="110" UserID="new_user1">
+          <Location>Athens, Greece</Location>
+          <Country>Greece</Country>
+        </Bidder>
+        <Time>Sep-19-25 14:00:00</Time>
+        <Amount>$30.00</Amount>
+      </Bid>
+      <Bid>
+        <Bidder Rating="75" UserID="new_user2">
+          <Location>Thessaloniki, Greece</Location>
+          <Country>Greece</Country>
+        </Bidder>
+        <Time>Sep-19-25 18:30:00</Time>
+        <Amount>$35.00</Amount>
+      </Bid>
+    </Bids>
+    <Location Latitude="38.2466" Longitude="21.7346">Patras, Greece</Location>
+    <Country>Greece</Country>
+    <Started>Sep-18-25 12:00:00</Started>
+    <Ends>Sep-23-25 12:00:00</Ends>
+    <Seller Rating="80%" UserID="test" />
+    <Description>Classic comic book, excellent condition, collector's item.</Description>
+    <Images>
+      <Image>items/comic1.jpg</Image>
+      <Image>items/comic2.jpg</Image>
+    </Images>
+  </Item>
+
+  <Item ItemID="5">
+    <Name>Antique Vase</Name>
+    <Category>Home</Category>
+    <Currently>$70.00</Currently>
+    <Buy_Price>$100.00</Buy_Price>
+    <First_Bid>$50.00</First_Bid>
+    <Number_of_Bids>1</Number_of_Bids>
+    <Bids>
+      <Bid>
+        <Bidder Rating="60" UserID="new_user3">
+          <Location>Thessaloniki, Greece</Location>
+          <Country>Greece</Country>
+        </Bidder>
+        <Time>Sep-20-25 16:00:00</Time>
+        <Amount>$70.00</Amount>
+      </Bid>
+    </Bids>
+    <Location Latitude="35.3387" Longitude="25.1442">Heraklion, Greece</Location>
+    <Country>Greece</Country>
+    <Started>Sep-19-25 09:00:00</Started>
+    <Ends>Sep-24-25 09:00:00</Ends>
+    <Seller Rating="95%" UserID="test" />
+    <Description>Beautiful hand-painted antique vase.</Description>
+    <Images>
+      <Image>items/vase1.jpg</Image>
+      <Image>items/vase2.jpg</Image>
+    </Images>
+  </Item>
+</Items>

@@ -1,13 +1,16 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Messages, Conversations
-from .serializers import ConversationSerializer, MessageSerializer
+from .serializers import ConversationInSerializer, ConversationOutSerializer, MessageSerializer
 
 from User.models import CustomUser
 from User.permissions import IsApproved
+
+from auctions.views import assign_expired_auctions_to_highest_bidders
 
 from django.db.models import Q
 
@@ -18,9 +21,12 @@ class GetInConversations(APIView):
     def get(self, request):
         user = request.user
 
-        conversations = Conversations.objects.filter(seller=user)
+        assign_expired_auctions_to_highest_bidders()
 
-        serializer = ConversationSerializer(conversations, many=True)
+        # Only conversations not deleted by this seller
+        conversations = Conversations.objects.filter(seller=user, deleted_by_sender=False)
+
+        serializer = ConversationInSerializer(conversations, many=True, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -32,44 +38,16 @@ class GetOutConversations(APIView):
     def get(self, request):
         user = request.user
 
-        conversations = Conversations.objects.filter(buyer=user)
+        # Only conversations not deleted by this buyer
+        conversations = Conversations.objects.filter(buyer=user, deleted_by_receiver=False)
 
-        serializer = ConversationSerializer(conversations, many=True)
+        assign_expired_auctions_to_highest_bidders()
+
+        serializer = ConversationOutSerializer(conversations, many=True, context={'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-class CheckMessages(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsApproved]
 
-    def get(self, request):
-        user = request.user 
-
-        received_messages = Messages.objects.filter(seen=False, conversation__in=Conversations.objects.filter(Q(seller=user) | Q(buyer=user)))
-        if (received_messages):
-            return_data = {
-                "new_messages": "true",
-                "message_count": str(len(received_messages))
-            }
-        else:
-            return_data = {
-                "new_messages": "false",
-            }
-
-        return Response(return_data, status=status.HTTP_200_OK)
-    
-class UnreadMessageCountView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsApproved]
-
-    def get(self, request):
-        user = request.user
-
-        unread_count = Messages.objects.filter(receiver=user, seen=False).count()
-
-        return Response({"unread_count": unread_count})
-
-class GetCOnversationMessages(APIView):
+class GetConversationMessages(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsApproved]
 
@@ -78,98 +56,30 @@ class GetCOnversationMessages(APIView):
         conversation_id = request.query_params.get('conversation_id')
 
         if not conversation_id:
-            return Response({"error" : "conversation id is required"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "conversation id is required"}, status=status.HTTP_404_NOT_FOUND)
 
+        try:
+            conversation_id = int(conversation_id)
+        except ValueError:
+            return Response({"error": "conversation id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
 
-        conversation = Conversations.objects.filter(Q(id=conversation_id & Q(seller=user) | Q(buyer=user))).first()
+        # Correct query
+        conversation = Conversations.objects.filter(
+            Q(id=conversation_id) & (Q(seller=user) | Q(buyer=user))
+        ).first()
 
         if not conversation:
-            return Response({"error" : "Invalid conversation id"}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response({"error": "Invalid conversation id"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Mark all messages received by this user as seen
+        Messages.objects.filter(conversation=conversation, receiver=user, seen=False).update(seen=True)
 
         messages = Messages.objects.filter(conversation=conversation).order_by('timestamp')
-
         serializer = MessageSerializer(messages, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
-
-class GetMessage(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsApproved]
-
-    def get(self, request):
-        user = request.user
-
-        other_user = request.query_params.get("user_id")
-
-        message_id = request.query_params.get("message_id")
-
-        if not other_user or not message_id:
-            return Response({"error": "user_id and message_id are required"},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        message = Messages.objects.filter(
-            (Q(sender=user) & Q(receiver_id=other_user)) |
-            (Q(sender_id=other_user) & Q(receiver=user)),
-            id=message_id
-        ).first()
-        
-
-        
-
-        if message:    
-            message.seen = True
-            message.save(update_fields=['seen'])
-
-            return Response({
-                "message_id": message.id,
-                "message": message.message,
-                "sender_id": message.sender.id,
-                "receiver_id": message.receiver.id,
-                "timestamp": message.timestamp,
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "no such message"}, status=status.HTTP_404_NOT_FOUND)
-
-class GetInMessages(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsApproved]
-
-    def get(self, request):
-        user = request.user
-
-        # Get all messages received by the user
-        messages = Messages.objects.filter(receiver=user).select_related('sender')
-
-        # Build a list of dicts with message id and sender username
-        result = [
-            {"message_id": msg.id, "sender_username": msg.sender.username, "message": msg.message, "seen": msg.seen}
-            for msg in messages
-        ]
-
-        return Response(result, status=200)
-
-class GetOutMessages(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsApproved]
-
-    def get(self, request):
-        user = request.user
-
-        # Get all messages sent by the user
-        messages = Messages.objects.filter(sender=user).select_related('sender')
-
-        # Build a list of dicts with message id and receiver username
-        result = [
-            {"message_id": msg.id, "sender_username": msg.receiver.username, "message": msg.message, "seen": msg.seen}
-            for msg in messages
-        ]
-
-        return Response(result, status=200)
-    
 class SendMessage(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsApproved]
@@ -177,33 +87,35 @@ class SendMessage(APIView):
     def post(self, request):
         sender = request.user
 
-        receiver_name = request.data.get("receiver")
+        conversation_id = request.data.get("conversation_id")
         text = request.data.get("message")
 
-        if not receiver_name or not text:
+        if not conversation_id or not text:
             return Response(
-                {"error": "receiver name and message are required"},
+                {"error": "conversation_id and message are required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        # Validate conversation
         try:
-            receiver = CustomUser.objects.get(username=receiver_name)
-        except CustomUser.DoesNotExist:
+            conversation = Conversations.objects.get(id=conversation_id)
+        except Conversations.DoesNotExist:
             return Response(
-                {"error": "Receiver does not exist"},
+                {"error": "Conversation does not exist"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
-        conversation = Conversations.objects.filter(
-            (Q(seller=sender) & Q(buyer=receiver)) |
-            (Q(seller=receiver) & Q(buyer=sender))
-        ).first()
-        if not conversation:
+
+        # Ensure sender is part of the conversation
+        if conversation.seller != sender and conversation.buyer != sender:
             return Response(
-                {"error": "You cannot message this user"},
+                {"error": "You are not a participant in this conversation"},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
+        # Figure out receiver
+        receiver = conversation.seller if conversation.buyer == sender else conversation.buyer
+
+        # Create message
         message = Messages.objects.create(
             conversation=conversation,
             sender=sender,
@@ -215,10 +127,37 @@ class SendMessage(APIView):
             {"success": True, "message_id": message.id},
             status=status.HTTP_201_CREATED
         )
+
     
-class DeleteMessage(APIView):
+class DeleteConversationView(APIView):
+    """
+    Deletes a conversation
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsApproved]
-
+    
     def post(self, request):
-        pass
+        user = request.user  # Make sure the user is authenticated
+        conversation_id = request.data.get("conversation_id")
+
+        if not conversation_id:
+            return Response({"error": "conversation_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation = get_object_or_404(Conversations, id=conversation_id)
+
+        # Determine if the user is seller or buyer
+        if conversation.seller == user:
+            conversation.deleted_by_sender = True
+        elif conversation.buyer == user:
+            conversation.deleted_by_receiver = True
+        else:
+            return Response({"error": "You are not part of this conversation."}, status=status.HTTP_403_FORBIDDEN)
+
+        # If both have marked it deleted, remove from DB
+        if conversation.deleted_by_sender and conversation.deleted_by_receiver:
+            conversation.delete()
+            return Response({"message": "Conversation permanently deleted."}, status=status.HTTP_200_OK)
+
+        # Otherwise, just mark as deleted for this user
+        conversation.save()
+        return Response({"message": "Conversation marked as deleted for you."}, status=status.HTTP_200_OK)
