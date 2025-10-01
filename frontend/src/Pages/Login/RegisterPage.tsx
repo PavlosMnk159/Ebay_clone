@@ -59,7 +59,6 @@ export function RegisterPage({
 
 
 
-    // Simulate loading
     setTimeout(() => {
       setIsLoading(false);
       onRegister(userData); 

@@ -8,7 +8,7 @@ import { useNavigate } from "react-router";
 
 interface Bid {
     bidder: Bidder;
-    time: number; //time the bid was made
+    time: number; 
     amount: number;
 }
 
@@ -181,8 +181,6 @@ export function BidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: (
         setSelectedProduct(null);
     };
 
-    // backend
-    // fetct ta products pou exoyn kai emena san bidder
     useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
         const fetch_unread = async () => {
@@ -193,8 +191,6 @@ export function BidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: (
                 
 
                 setUnread(data.unread_count);
-                console.log("this is the unreads");
-                console.log(data.unread_count);
 
             } catch (error) {
                 console.log("Error while fetching unread messages: ", error);
@@ -207,8 +203,6 @@ export function BidPage({ isAdmin, onLogout } : { isAdmin : boolean; onLogout: (
                 const res = await fetch_with_auth.get('/my_bids');
                 const data = res.data;
                 setProducts(data);
-                console.log("These are the bids")
-                console.log(data);
             } catch(error) {
                 console.log("Error while fetching user bids", error);
             }

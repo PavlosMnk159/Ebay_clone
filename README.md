@@ -11,13 +11,6 @@
 
 - Docker and Docker Compose installed
 
-### Configuration
-
-1. Create a `.env` file in the root directory with your API keys e.g. :
-   ```
-   OPENAI_API_KEY=your_openai_api_key_here
-   ```
-
 ### Running the Application
 
 1. Build and start the containers:

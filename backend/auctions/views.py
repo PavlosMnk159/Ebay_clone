@@ -6,7 +6,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from django.db.models import Q, Max
+from django.db.models import Q
 from django.http import HttpResponse
 
 
@@ -19,7 +19,7 @@ from .recomendation_utils import recommend_items
 from user_messages.serializers import ConversationCreateSerializer, MessageCreateSerializer
 from user_messages.models import Conversations, Messages
 
-from User.permissions import IsApproved, CanViewUserDetails
+from User.permissions import CanViewUserDetails, IsApproved
 
 import xml.etree.ElementTree as ET
 
@@ -130,11 +130,9 @@ class CreateAuctionItem(APIView):
     def post(self, request):
         serialiser = AuctionCreation(data=request.data, context={'request': request})
 
-        print(request.data)
         if (serialiser.is_valid()):
             serialiser.save()
             return Response({"detail": "Item created successfully"}, status=status.HTTP_201_CREATED)
-        print(serialiser.errors, flush=True)
         return Response(serialiser.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class EditAuctionItem(APIView):
@@ -202,7 +200,6 @@ class ActivateItemView(APIView):
 
         item = get_object_or_404(Item, item_id=item_id)
 
-        # Optional: ensure only seller can activate
         if item.seller != request.user:
             return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -273,7 +270,6 @@ class BuyOut(APIView):
         if conversation.is_valid():
             conversation_instance = conversation.save()
         else:
-            print("Message errors:", conversation.errors)
             return Response(
                 {"error": "Failed to create conversation", "details": conversation.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -291,7 +287,6 @@ class BuyOut(APIView):
         if (message.is_valid()):
             message.save()
         else:
-            print("Message errors:", message.errors)
             return Response(
                 {"error": "Failed to send initial message", "details": conversation.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -310,8 +305,8 @@ class ActiveItemsXMLView(APIView):
     """
     Returns all active items in XML format, fully matching the example structure.
     """
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated, CanViewUserDetails]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, CanViewUserDetails]
 
     def get(self, request):
         items = Item.objects.prefetch_related('categories', 'bids', 'bids__bidder').filter(active=True)
@@ -373,8 +368,8 @@ class ActiveItemsExportView(APIView):
     Returns all active items in XML or JSON depending on 'format' query parameter.
     Use ?format=json or ?format=xml
     """
-    # authentication_classes = [JWTAuthentication]
-    # permission_classes = [IsAuthenticated, IsApproved]
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsApproved]
 
     def get(self, request):
         export_format = request.query_params.get("format", "json").lower()
@@ -477,7 +472,7 @@ class ItemBidsView(APIView):
     GET /items/bids/?item_id=123
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsApproved]
 
     def get(self, request):
         item_id = request.GET.get("item_id")
@@ -499,7 +494,8 @@ class MyBids(APIView):
     Returns all active auction items. If the user is logged in,
     includes the user's latest bid on each item.
     """
-    permission_classes = [IsAuthenticated]  # optional: remove if public access allowed
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsApproved]
 
     def get(self, request):
         user = request.user
@@ -525,15 +521,11 @@ def assign_expired_auctions_to_highest_bidders():
     now = timezone.now()
     results = []
 
-    # Get all expired, active items
     expired_items = Item.objects.filter(active=True, ends__lte=now)
 
-    print(expired_items, flush=True)
     for item in expired_items:
-        # Find the highest bid
         highest_bid = Bid.objects.filter(item=item).order_by('-amount').first()
         if not highest_bid:
-            # No bids placed, mark item as inactive and skip
             item.active = False
             item.save()
             results.append({
@@ -545,18 +537,15 @@ def assign_expired_auctions_to_highest_bidders():
 
         buyer = highest_bid.bidder
 
-        # Assign buyer and deactivate item
         item.buyer = buyer
         item.active = False
         item.save()
 
-        # Create conversation if not exists
         conversation, created = Conversations.objects.get_or_create(
             seller=item.seller,
             buyer=buyer
         )
 
-        # Add initial message
         Messages.objects.create(
             conversation=conversation,
             sender=buyer,

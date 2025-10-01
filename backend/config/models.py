@@ -15,7 +15,6 @@ class AppState(models.Model):
         state = cls.objects.first()
         if not state:
             state = cls.objects.create(is_ready=False)
-        print("checking status")
         # if the state is marked not ready check that all migrations have been completed
         if not state.is_ready:
             cls.check_migrations(state)

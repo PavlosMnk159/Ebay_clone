@@ -25,7 +25,6 @@ class VisitSerialzer(serializers.ModelSerializer):
         model = Visit
         fields = ['item', 'visitor', 'count']
 
-# this allows us to use the category names as fields
 class CategoryNameField(serializers.SlugRelatedField):
     def __init__(self, **kwargs):
         # lookup by name
@@ -102,12 +101,10 @@ class AuctionEditor(serializers.ModelSerializer):
         categories_data = validated_data.pop('categories', None)
         images_data = validated_data.pop('images', None)
 
-        # Update basic fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Update categories if provided
         if categories_data is not None:
             category_objs = []
             for name in categories_data:
@@ -115,9 +112,8 @@ class AuctionEditor(serializers.ModelSerializer):
                 category_objs.append(category)
             instance.categories.set(category_objs)
 
-        # Update images if provided
         if images_data is not None:
-            instance.images.all().delete()  # clear existing
+            instance.images.all().delete()
             for image in images_data:
                 ItemImage.objects.create(item=instance, image=image)
 
@@ -136,7 +132,7 @@ class ItemSerializer(serializers.ModelSerializer):
     Bids = serializers.SerializerMethodField()
     seller = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
-    city = serializers.CharField(source='location')  # assuming "location" field in model is city name
+    city = serializers.CharField(source='location') 
     isActive = serializers.IntegerField(source='active')
     time_left = serializers.SerializerMethodField() 
     images = serializers.SerializerMethodField()
@@ -162,12 +158,10 @@ class ItemSerializer(serializers.ModelSerializer):
         ]
 
     def get_category(self, obj):
-        # if categories is ManyToMany
         categories = obj.categories.all()
         return categories[0].name if categories.exists() else None
 
     def get_Bids(self, obj):
-        # customize this if you want nested bids, otherwise null
         return None  
 
     def get_seller(self, obj):
@@ -212,10 +206,10 @@ class MyBidItemSerializer(serializers.ModelSerializer):
     First_Bid = serializers.DecimalField(source='first_bid', max_digits=10, decimal_places=2)
     Number_of_Bids = serializers.IntegerField(source='number_of_bids')
     Bids = serializers.SerializerMethodField()
-    user_bid = serializers.SerializerMethodField()  # NEW: User's latest bid
+    user_bid = serializers.SerializerMethodField() 
     seller = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
-    city = serializers.CharField(source='location')  # assuming "location" field in model is city name
+    city = serializers.CharField(source='location') 
     isActive = serializers.IntegerField(source='active')
     time_left = serializers.SerializerMethodField() 
     images = serializers.SerializerMethodField()

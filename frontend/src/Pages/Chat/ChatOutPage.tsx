@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-// import axios from "axios";
 import fetch_with_auth from "../../Authentication/axios";
 import { useNavigate } from "react-router";
 
@@ -47,7 +46,6 @@ export function ChatOutPage({ isAdmin, onLogout }: { isAdmin : boolean; onLogout
     const [mailContacts, setMailContacts] = useState<MailContact[]>([]);
     const [countRequests, setCountRequests] = useState(0);
 
-    // fetch buers conversation
 const [mailThreads, setMailThreads] = useState<Record<number, Array<{ 
     id: number;
     subject: string;

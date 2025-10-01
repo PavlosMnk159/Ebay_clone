@@ -58,6 +58,7 @@ def create_random_user(identifier, seen_usernames: set):
             phone="+306969696969",
             AFM=11112222,
             password=FAKE_PASSWORD_HASH,  # Directly assign hashed password
+            is_approved=True,
         )
         return user
     except Exception as e:
@@ -86,7 +87,6 @@ def load_users_from_xml(file_path):
                 AFM=int(user_el.findtext('AFM') or 0),
                 is_approved=True,
             )
-            print(f"Created user: {user.username}")
 
             if (user_el.findtext('Username') == 'admin'):
                 perms = Permission.objects.filter(

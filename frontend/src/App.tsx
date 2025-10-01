@@ -19,11 +19,11 @@ import { ChatOutPage } from './Pages/Chat/ChatOutPage.tsx';
 import { ChatInPage } from "./Pages/Chat/ChatInPage.tsx";
 
 
-import { EBayPage } from './Pages/eBayPage.tsx';
-import { MakeAuction } from './Pages/MakeAuctionPage.tsx';
-import { AuctionPage } from './Pages/myAuctionPage.tsx';
-import { ItemBidPage } from './Pages/ItemBidPage.tsx'
-import { BidPage } from './Pages/myBidPage.tsx'
+import { EBayPage } from './Pages/Auction/eBayPage.tsx';
+import { MakeAuction } from './Pages/Auction/MakeAuctionPage.tsx';
+import { AuctionPage } from './Pages/Auction/myAuctionPage.tsx';
+import { ItemBidPage } from './Pages/Auction/ItemBidPage.tsx'
+import { BidPage } from './Pages/Auction/myBidPage.tsx'
 
 
 
@@ -36,9 +36,8 @@ function MainApp() {
   const [currPage, setCurrPage] = useState<string | null>("/login");
   const [appReady, setAppReady] = useState(false);
   
-  // const [hasMessages, setHasMessages] = useState(false)
   const location = useLocation();
-  const navigate = useNavigate(); // Now inside Router context
+  const navigate = useNavigate(); 
 
   const navigateToEbay = () => {
     navigate('/ebay');
@@ -66,14 +65,11 @@ function MainApp() {
   
   const restoreAuthState = () => {
     try {
-      const token = localStorage.getItem('access_token');
       const adminStatus = localStorage.getItem('is_admin'); // Store admin status
       const userLoggedIn = localStorage.getItem('is_logged_in'); // Store login status
-      const userGuest = localStorage.getItem('is_guest'); // Store login status
+      const userGuest = localStorage.getItem('is_guest'); // Store guest status
       const currPage = localStorage.getItem('currentPage'); // Store page status
       
-      console.log('Restoring auth state:', { token, adminStatus, userLoggedIn, userGuest, currPage});
-      //token && 
       if (userLoggedIn === 'true') {
         setCurrPage(currPage);
 
@@ -156,7 +152,6 @@ function MainApp() {
     } else {
       const errors = response.message?.detail;
       if (errors) {
-        // Get first field and its first message
         const firstField = Object.keys(errors)[0];
         const firstMessage = (errors[firstField] as string[])[0];
         alert(`${firstField}: ${firstMessage}`);
@@ -204,11 +199,8 @@ function MainApp() {
     );
   }
 
-  //Routes
-
 
     useEffect(() => {
-      // Reset and show loading animation whenever route changes
       setAppReady(false);
       
       const timer = setTimeout(() => {
@@ -216,7 +208,7 @@ function MainApp() {
       }, 200);
       
       return () => clearTimeout(timer);
-    }, [location.pathname]); // Runs whenever the route changes
+    }, [location.pathname]); 
 
   // Loading screen
   if (!appReady) {

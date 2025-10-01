@@ -12,11 +12,9 @@ class ConversationInSerializer(serializers.ModelSerializer):
         fields = ['id', 'buyer_name', 'buyer_email', 'avatar', 'unread', 'created_at']
 
     def get_avatar(self, obj):
-        # You can customize avatar here, for simplicity using emoji
         return "📚"
 
     def get_unread(self, obj):
-        # Count messages where receiver is current user and not seen
         user = self.context['request'].user
         return obj.messages.filter(receiver=user, seen=False).count()
     
@@ -31,11 +29,9 @@ class ConversationOutSerializer(serializers.ModelSerializer):
         fields = ['id', 'seller_name', 'seller_email', 'avatar', 'unread', 'created_at']
 
     def get_avatar(self, obj):
-        # You can customize avatar here, for simplicity using emoji
         return "📚"
 
     def get_unread(self, obj):
-        # Count messages where receiver is current user and not seen
         user = self.context['request'].user
         return obj.messages.filter(receiver=user, seen=False).count()
 
@@ -72,7 +68,7 @@ class MessageCreateSerializer(serializers.ModelSerializer):
 class ConversationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conversations
-        fields = ['seller', 'buyer']  # only fields needed to create
+        fields = ['seller', 'buyer'] 
 
     def create(self, validated_data):
         return Conversations.objects.create(**validated_data)

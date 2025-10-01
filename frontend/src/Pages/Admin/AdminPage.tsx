@@ -32,8 +32,7 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
       'user_id': user.id,
       'decision': "False",
     }
-    const response = await fetch_with_auth.post('approve_user/', data);
-    console.log(response.data)
+    await fetch_with_auth.post('approve_user/', data);
         
       
 
@@ -155,8 +154,6 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
           const data = res.data
           
           setUnread(data.unread_count);
-          console.log("this is the unreads");
-          console.log(data.unread_count);
 
       } catch (error) {
           console.log("Error while fetching products: ", error);
@@ -218,14 +215,14 @@ export function AdminPage({ onLogout } : { onLogout: () => void;}) {
                 className="relative bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
               >
                 Requests
-                {countRequests && (
+                {countRequests > 0  && (
                   <span
                     className={`absolute -top-2 -right-2 bg-red-500 text-white font-bold rounded-full flex items-center justify-center`}
                     style={{
                       width: `${Math.max(24, countRequests.toString().length * 12)}px`,
                     }}
                   >
-                    {countRequests}
+                  
                   </span>
                 )}
               </button>

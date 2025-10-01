@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-// import axios from "axios";
 import fetch_with_auth from "../../Authentication/axios";
 import { useNavigate } from "react-router";
 
@@ -46,9 +45,7 @@ export function ChatInPage({ isAdmin, onLogout }: { isAdmin : boolean; onLogout:
 
     const [mailContacts, setMailContacts] = useState<MailContact[]>([]);
     const [countRequests, setCountRequests] = useState(0);
-    // const [unread, setUnread] = useState(0);
 
-    // fetch buers conversation
 const [mailThreads, setMailThreads] = useState<Record<number, Array<{ 
     id: number;
     subject: string;
@@ -145,27 +142,6 @@ const [mailThreads, setMailThreads] = useState<Record<number, Array<{
 
     }, []);
     
-    //     useEffect(() => {
-    //     let interval: ReturnType<typeof setInterval>;
-    //     const fetch_unread = async () => {
-    //         try {
-    //             const res = await fetch_with_auth.get('/unread_messages/');
-    //             const data = res.data
-                
-    //             setUnread(data.unread_count);
-    //             console.log("this is the unreads");
-    //             console.log(data.unread_count);
-
-    //         } catch (error) {
-    //             console.log("Error while fetching products: ", error);
-    //         }
-            
-    //     }
-
-    //     fetch_unread();
-    //     interval = setInterval(fetch_unread, 5000);
-    //     return () => clearInterval(interval);
-    // }, []);
 
     const handleReplay  = async (data : MailContact[]) => {
         setShowCompose(false);
@@ -181,7 +157,7 @@ const [mailThreads, setMailThreads] = useState<Record<number, Array<{
 
         try {
             await fetch_with_auth.post('send_message/', send_data);
-            setComposeContent(''); // clear compose box
+            setComposeContent(''); 
         } catch (e) {
             console.error("Error sending message:", e);
         }

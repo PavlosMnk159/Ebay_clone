@@ -33,10 +33,9 @@ export function LoginPage({
 
     const loginData = {username, password};
 
-    // Simulate loading 
     setTimeout(() => {
         setIsLoading(false);
-        onLogin(loginData); // Just pass true to login regardless of credentials
+        onLogin(loginData); 
     }, 1000);   
   };
 

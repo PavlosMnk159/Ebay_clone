@@ -35,9 +35,8 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
       'user_id': user.id,
       'decision': "True",
     }
-    const response = await fetch_with_auth.post('approve_user/', data);
+    await fetch_with_auth.post('approve_user/', data);
     onClose();
-    console.log(response.data)
   };
 
   const handleDeleteRequest = async () => {
@@ -45,12 +44,8 @@ function ItemModal({ user, isOpen, onClose } : ItemModalProps) {
       'user_id': user.id,
       'decision': "False",
     }
-    const response = await fetch_with_auth.post('approve_user/', data);
+    await fetch_with_auth.post('approve_user/', data);
     onClose();
-    console.log(response.data)
-        
-      
-
   };
 
 
@@ -183,9 +178,6 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
         const data = res.data
         
         setUnread(data.unread_count);
-        console.log("this is the unreads");
-        console.log(data.unread_count);
-
     } catch (error) {
         console.log("Error while fetching products: ", error);
     }
@@ -213,8 +205,6 @@ export function RequestPage({ onLogout } : { onLogout: () => void;}) {
 
   }, []);
 
-  // backend
-  // fetsch unread
 
   return (
     <div className="min-h-screen bg-gray-50">

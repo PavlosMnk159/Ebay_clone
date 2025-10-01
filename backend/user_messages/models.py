@@ -41,4 +41,4 @@ class Messages(models.Model):
 
 
     class Meta:
-        ordering = ["timestamp"]  # Messages come in chronological order
+        ordering = ["timestamp"] 
